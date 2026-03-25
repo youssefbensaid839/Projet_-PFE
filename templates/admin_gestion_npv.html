@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des NPV - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet">
+    <style>
+        .success-msg { animation: fadeOut 4s forwards; }
+        @keyframes fadeOut { 0% {opacity:1} 80% {opacity:1} 100% {opacity:0} }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+
+<div class="max-w-screen-2xl mx-auto px-6 py-6">
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-8">
+        <a href="{{ url_for('admin_dashboard') }}" 
+           class="flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium text-lg">
+            ← Retour au Dashboard
+        </a>
+
+        <h1 class="text-3xl font-bold">Gestion des NPV</h1>
+
+        <div class="flex items-center gap-3">
+            <!-- Barre de recherche -->
+            <div class="relative w-80">
+                <input type="text" id="searchInput" 
+                       onkeyup="searchTable()"
+                       placeholder="Rechercher NPV..." 
+                       class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
+                <div class="absolute left-4 top-3.5 text-gray-400 text-xl">
+                    🔍︎
+                </div>
+            </div>
+
+            <!-- Filtrer -->
+            <button onclick="alert('Filtre avancé à implémenter selon les données disponibles')" 
+                    class="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">
+                Filtrer
+            </button>
+
+            <!-- + Nouvelle NPV -->
+            <button onclick="openModal()" 
+                    class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
+                <span class="text-2xl leading-none">+</span> Nouvelle NPV
+            </button>
+
+            <!-- Dark Mode -->
+            <button onclick="toggleDarkMode()" 
+                    class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500">
+                <span id="theme-icon" class="text-2xl">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Message succès -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="success-msg mb-6 px-6 py-3 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-2xl flex items-center gap-2 text-sm font-medium inline-block">
+                    ✅ {{ msg }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tableau -->
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow overflow-hidden">
+        <table id="npvTable" class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                <tr>
+                    <th class="px-8 py-5 text-left font-semibold">ID</th>
+                    <th class="px-8 py-5 text-left font-semibold">Numéro</th>
+                    <th class="px-8 py-5 text-left font-semibold">Statut</th>
+                    <th class="px-8 py-5 text-left font-semibold">Campagne</th>
+                    <th class="px-8 py-5 text-center font-semibold w-40">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                {% for n in npvs %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="px-8 py-5 font-medium">{{ n.id }}</td>
+                    <td class="px-8 py-5">{{ n.numero }}</td>
+                    <td class="px-8 py-5">
+                        <span class="px-4 py-1.5 text-xs font-semibold rounded-full 
+                            {% if n.statut == 'Actif' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ n.statut }}
+                        </span>
+                    </td>
+                    <td class="px-8 py-5">{{ n.campagne.nom if n.campagne else '—' }}</td>
+
+                    <!-- Actions -->
+                    <td class="px-8 py-5">
+                        <div class="flex items-center justify-center gap-6">
+
+                            <!-- Modifier -->
+                            <button onclick="editNPV({{ n.id }}, '{{ n.numero }}', '{{ n.statut }}', {{ n.campagne_id or 'null' }})" 
+                                    class="p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition hover:scale-125">
+                                <img src="{{ url_for('static', filename='images/gear.png') }}" 
+                                     alt="Modifier" 
+                                     class="w-16 h-16 object-contain">
+                            </button>
+                            
+                            <!-- Supprimer -->
+                            <button onclick="deleteNPV({{ n.id }})" 
+                                    class="p-2 rounded-xl hover:bg-red-100 dark:hover:bg-red-900 transition hover:scale-125">
+                                <img src="{{ url_for('static', filename='images/trash.png') }}" 
+                                     alt="Supprimer" 
+                                     class="w-16 h-16 object-contain">
+                            </button>
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div id="npvModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="px-8 pt-8 pb-6">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nouvelle NPV</h2>
+            <form method="POST" id="npvForm">
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" name="npv_id" id="npvId">
+            </form>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 px-8 py-5 flex gap-3 rounded-b-3xl">
+            <button onclick="closeModal()" class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100">Annuler</button>
+            <button onclick="document.getElementById('npvForm').submit()" class="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchTable() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#npvTable tbody tr");
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
+    });
+}
+
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    const icon = document.getElementById('theme-icon');
+    icon.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+}
+
+function openModal() {
+    document.getElementById('npvModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Nouvelle NPV';
+    document.getElementById('formAction').value = 'create';
+    document.getElementById('npvForm').reset();
+}
+
+function editNPV(id, numero, statut, campagne_id) {
+    document.getElementById('npvModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Modifier NPV';
+    document.getElementById('formAction').value = 'update';
+    document.getElementById('npvId').value = id;
+}
+
+function closeModal() {
+    document.getElementById('npvModal').classList.add('hidden');
+}
+
+function deleteNPV(id) {
+    if (confirm("Voulez-vous vraiment supprimer cette NPV ?")) {
+        alert("Suppression de NPV ID " + id);
+    }
+}
+</script>
+
+</body>
+</html>

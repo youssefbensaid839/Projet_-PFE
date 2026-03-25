@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord Administrateur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#f97316',
+              primaryDark: '#c2410c',
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="h-full bg-gray-50 flex flex-col">
+    <!-- Header fixe -->
+    <header class="bg-white shadow fixed top-0 left-0 right-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10 mr-3">
+                <h1 class="text-2xl font-bold text-gray-900">Tableau de bord Administrateur</h1>
+            </div>
+            <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 font-medium">
+                Déconnexion
+            </a>
+        </div>
+    </header>
+
+    <!-- Espace pour compenser le header fixe -->
+    <div class="h-20"></div>
+
+    <!-- Bouton "Menu" fixe -->
+    <button onclick="openSidebar()" 
+            class="fixed top-20 left-6 z-50 flex items-center bg-primary text-white px-6 py-3.5 rounded-full shadow-lg hover:bg-primaryDark transition space-x-3">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span>Menu</span>
+    </button>
+
+    <!-- Sidebar qui s'ouvre depuis la gauche -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+        <!-- En-tête sidebar -->
+        <div class="p-5 flex justify-between items-center border-b">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
+                <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+            </div>
+            <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Liens du menu -->
+        <nav class="p-5 space-y-2">
+            <a href="{{ url_for('gestion_utilisateurs') }}" 
+               class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-pointer">
+                Gestion des utilisateurs
+            </a>
+    
+            <a href="{{ url_for('gestion_donneurs_ordre') }}" 
+               class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-pointer">
+                Gestion des DO
+            </a>
+            <a href="{{ url_for('gestion_campagnes') }}" 
+               class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-pointer">
+                Gestion des campagnes
+            </a>
+            <a href="{{ url_for('gestion_npv') }}" 
+               class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-pointer">
+                Gestion des NPV
+            </a>
+            <a href="{{ url_for('gestion_operateurs') }}" 
+               class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-pointer">
+                Gestion des opérateurs
+            </a>
+<a href="{{ url_for('historique') }}" 
+   class="block px-4 py-3 text-gray-700 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition flex items-center gap-2">
+     Consulter l'historique global des actions
+</a>
+            <!-- Éléments non cliquables -->
+            <div class="px-5 py-3 text-gray-400 font-medium cursor-not-allowed">
+                Accéder à l'ensemble des tableaux de bord
+            </div>
+        
+        </nav>
+    </aside>
+
+    <!-- Contenu principal -->
+    <main class="flex-grow p-10">
+        <div class="bg-white shadow rounded-xl p-8 text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Dashboard Administrateur</h2>
+            <p class="text-gray-600">Cette zone est vide pour le moment. Les tableaux de bord seront ajoutés ici.</p>
+        </div>
+    </main>
+
+    <!-- JavaScript pour ouvrir/fermer la sidebar -->
+    <script>
+        function openSidebar() {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar').classList.add('translate-x-0');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('translate-x-0');
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+
+        // Fermer la sidebar en cliquant en dehors
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const button = document.querySelector('button[onclick="openSidebar()"]');
+            if (!sidebar.contains(event.target) && !button.contains(event.target)) {
+                closeSidebar();
+            }
+        });
+    </script>
+</body>
+</html>

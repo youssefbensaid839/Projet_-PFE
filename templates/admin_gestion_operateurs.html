@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Opérateurs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+    <style>
+        .dataTable-wrapper .dataTable-container { overflow-x: auto; }
+        .btn-edit { background-color: #3b82f6; color: white; }
+        .btn-delete { background-color: #ef4444; color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10">
+                <h1 class="text-2xl font-bold text-gray-900">Gestion des Opérateurs</h1>
+            </div>
+            <a href="{{ url_for('admin_dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-medium transition">← Retour au Dashboard</a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div class="px-6 py-5 border-b flex justify-between items-center bg-orange-50">
+                <h2 class="text-lg font-semibold text-gray-800">Liste des Opérateurs</h2>
+                <button onclick="openModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 shadow transition">
+                    <span class="text-xl">+</span> Nouvel Opérateur
+                </button>
+            </div>
+
+            <div class="p-6">
+                <table id="operateurTable" class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-left">
+                            <th class="px-4 py-3">ID</th>
+                            <th class="px-4 py-3">Nom</th>
+                            <th class="px-4 py-3">Code</th>
+                            <th class="px-4 py-3">Pays</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in operateurs %}
+                        <tr class="hover:bg-orange-50 transition">
+                            <td class="px-4 py-3 text-gray-500">{{ o.id }}</td>
+                            <td class="px-4 py-3 font-medium">{{ o.nom }}</td>
+                            <td class="px-4 py-3">{{ o.code }}</td>
+                            <td class="px-4 py-3">{{ o.pays or '—' }}</td>
+                            <td class="px-4 py-3 text-center space-x-2">
+                                <button onclick="editOperateur({{ o.id }}, '{{ o.nom }}', '{{ o.code }}', '{{ o.pays or '' }}')" 
+                                        class="btn-edit px-5 py-1.5 rounded-xl text-xs font-medium">Modifier</button>
+                                <button onclick="deleteOperateur({{ o.id }})" 
+                                        class="btn-delete px-5 py-1.5 rounded-xl text-xs font-medium">Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Scrollable -->
+    <div id="modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-5 bg-orange-500 text-white flex justify-between items-center flex-shrink-0">
+                <h2 id="modalTitle" class="text-xl font-semibold">Nouvel Opérateur</h2>
+                <button onclick="closeModal()" class="text-3xl leading-none hover:text-orange-200">×</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1">
+                <form method="POST" id="operateurForm">
+                    <input type="hidden" name="action" id="formAction" value="create">
+                    <input type="hidden" name="operateur_id" id="operateurId">
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                            <input type="text" name="nom" id="nom" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                            <input type="text" name="code" id="code" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pays</label>
+                            <input type="text" name="pays" id="pays" class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-6 py-5 border-t bg-gray-50 flex gap-3 flex-shrink-0">
+                <button onclick="closeModal()" class="flex-1 py-3 text-gray-700 font-medium border border-gray-300 rounded-2xl hover:bg-gray-100">Annuler</button>
+                <button onclick="document.getElementById('operateurForm').submit()" class="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            new simpleDatatables.DataTable("#operateurTable", {
+                perPage: 10, searchable: true, sortable: true,
+                labels: { placeholder: "Rechercher...", perPage: "entrées par page", noRows: "Aucun opérateur trouvé" }
+            });
+        });
+
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modalTitle').textContent = "Nouvel Opérateur";
+            document.getElementById('formAction').value = "create";
+            document.getElementById('operateurForm').reset();
+        }
+
+        function editOperateur(id, nom, code, pays) {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('modalTitle').textContent = "Modifier l'Opérateur";
+            document.getElementById('formAction').value = "update";
+            document.getElementById('operateurId').value = id;
+            document.getElementById('nom').value = nom;
+            document.getElementById('code').value = code;
+            document.getElementById('pays').value = pays || '';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        function deleteOperateur(id) {
+            if (confirm("Supprimer cet opérateur ?")) {
+                alert("Suppression Opérateur ID " + id);
+            }
+        }
+    </script>
+</body>
+</html>

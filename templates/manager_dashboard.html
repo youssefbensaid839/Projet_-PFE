@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#f97316',
+              primaryDark: '#c2410c',
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="h-full flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Entreprise" class="h-10 mr-3">
+                <h1 class="text-2xl font-bold text-gray-900">Dashboard Manager</h1>
+            </div>
+            <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 font-medium">Déconnexion</a>
+        </div>
+    </header>
+
+    <!-- Bouton "Menu" fixe -->
+    <button onclick="openSidebar()" 
+            class="fixed top-20 left-6 z-50 flex items-center bg-primary text-white px-6 py-3.5 rounded-full shadow-lg hover:bg-primaryDark transition space-x-3">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span>Menu</span>
+    </button>
+
+    <!-- Sidebar qui s'ouvre -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+        <!-- En-tête sidebar -->
+        <div class="p-5 flex justify-between items-center border-b">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
+                <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+            </div>
+            <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Les 4 choix du Manager (non cliquables pour l'instant) -->
+        <nav class="mt-6 px-5 space-y-3">
+            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
+                Consulter les tableaux de bord relatifs aux DO
+            </div>
+            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
+                Exporter les données selon les filtres appliqués
+            </div>
+            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
+                Télécharger les factures disponibles
+            </div>
+            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
+                Recevoir les factures par email
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Overlay sombre -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300" onclick="closeSidebar()"></div>
+
+    <!-- Dashboard vide -->
+    <main class="flex-grow p-10 pt-24">
+        <div class="bg-white shadow rounded-xl p-10 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6">Bienvenue dans votre espace Manager</h1>
+            <p class="text-xl text-gray-600">
+                Cliquez sur le bouton "Menu" en haut à gauche pour accéder à vos fonctionnalités.<br>
+                Cette zone est vide pour le moment.
+            </p>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        function openSidebar() {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('overlay').classList.remove('hidden');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('overlay').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

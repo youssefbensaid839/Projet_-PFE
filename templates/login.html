@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Mon App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#f97316',
+              primaryDark: '#c2410c',
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="h-full bg-white flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
+            <div class="px-8 py-12">
+                <!-- Logo + titre -->
+                <div class="flex items-center justify-center mb-8">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Entreprise" class="h-12 mr-3">
+                    <h2 class="text-3xl font-bold text-gray-900">Connexion</h2>
+                </div>
+
+                <!-- Flash messages (position idéale : juste avant le formulaire) -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="space-y-3 mb-8">
+                            {% for category, message in messages %}
+                                <div class="p-4 rounded-xl text-sm border shadow-sm
+                                            {% if category == 'success' %}bg-green-50 border-green-200 text-green-800{% endif %}
+                                            {% if category == 'error' %}bg-red-50 border-red-200 text-red-800{% endif %}
+                                            {% if category == 'info' or category == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <p class="text-center text-gray-600 mb-8">
+                    Connectez-vous pour accéder à la plateforme
+                </p>
+
+                <form method="POST" class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Adresse email</label>
+                        <input type="email" name="email" id="email" required autofocus
+                               class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3 transition duration-150"
+                               placeholder="exemple@domaine.com">
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                        <input type="password" name="password" id="password" required
+                               class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3 transition duration-150"
+                               placeholder="••••••••">
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-primary hover:bg-primaryDark text-white font-medium py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-200 transform hover:-translate-y-0.5">
+                        Se connecter
+                    </button>
+                </form>
+
+                <p class="mt-8 text-center text-sm text-gray-600">
+                    Pour obtenir un compte, contactez l'administrateur.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
