@@ -21,18 +21,23 @@
 </head>
 <body class="h-full bg-white flex items-center justify-center p-4">
     <div class="w-full max-w-md">
-        <div class="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-200">
-            <div class="px-8 py-12">
-                <!-- Logo + titre -->
-                <div class="flex items-center justify-center mb-8">
-                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Entreprise" class="h-12 mr-3">
-                    <h2 class="text-3xl font-bold text-gray-900">Connexion</h2>
+        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-200">
+            <div class="px-8 py-10">   <!-- py-10 au lieu de py-12 pour gagner de la hauteur -->
+
+                <!-- Logo grand mais contrôlé -->
+                <div class="flex justify-center mb-6">
+                    <img src="{{ url_for('static', filename='logo.png') }}" 
+                         alt="Logo Entreprise" 
+                         class="h-30 w-auto">   <!-- h-16 = beau et pas trop grand -->
                 </div>
 
-                <!-- Flash messages (position idéale : juste avant le formulaire) -->
+                <!-- Titre -->
+                <h2 class="text-2xl font-semibold text-gray-900 text-center mb-8">Connexion</h2>
+
+                <!-- Messages flash -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
-                        <div class="space-y-3 mb-8">
+                        <div class="space-y-3 mb-6">
                             {% for category, message in messages %}
                                 <div class="p-4 rounded-xl text-sm border shadow-sm
                                             {% if category == 'success' %}bg-green-50 border-green-200 text-green-800{% endif %}
@@ -45,7 +50,7 @@
                     {% endif %}
                 {% endwith %}
 
-                <p class="text-center text-gray-600 mb-8">
+                <p class="text-center text-gray-600 mb-8 text-sm">
                     Connectez-vous pour accéder à la plateforme
                 </p>
 
@@ -65,7 +70,7 @@
                     </div>
 
                     <button type="submit"
-                            class="w-full bg-primary hover:bg-primaryDark text-white font-medium py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-200 transform hover:-translate-y-0.5">
+                            class="w-full bg-primary hover:bg-primaryDark text-white font-medium py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-200">
                         Se connecter
                     </button>
                 </form>

@@ -34,6 +34,11 @@ app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
 app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 
 jwt = JWTManager(app)
+# Ajoute ceci après la création de jwt = JWTManager(app)
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return render_template('token_expired.html'), 401
 
 # Base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -61,6 +66,7 @@ class Utilisateur(db.Model):
     role = db.Column(db.String(30), nullable=False)  # 'admin', 'responsable_plateau', 'manager'
     do_id = db.Column(db.Integer, db.ForeignKey('DonneurdOrdre.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
 class DonneurdOrdre(db.Model):
     __tablename__ = 'DonneurdOrdre'
     id = db.Column(db.Integer, primary_key=True)
@@ -95,19 +101,23 @@ class Operateur(db.Model):
     __tablename__ = 'Operateur'
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(20))  
+    code = db.Column(db.String(20))
+    pays = db.Column(db.String(100), nullable=False)  
+from datetime import datetime
+
 class Historique(db.Model):
+    __tablename__ = 'Historique'
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
     
-    action = db.Column(db.String(50), nullable=False)      # CREATE, UPDATE, DELETE
+    action = db.Column(db.String(50), nullable=False)
     entite = db.Column(db.String(50), nullable=False)
     entite_id = db.Column(db.Integer, nullable=True)
     details = db.Column(db.String(500), nullable=True)
     date_action = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relation correcte
-    user = db.relationship('Utilisateur', backref=db.backref('historiques', lazy=True))
+    user = db.relationship('Utilisateur', backref='historiques', lazy=True)
 
     def __repr__(self):
         return f"<Historique {self.action} {self.entite}>"
@@ -196,16 +206,18 @@ def logout():
     return resp
 # ==================== FONCTION LOG HISTORIQUE ====================
 def log_action(current_user_id, action, entite, entite_id=None, old_value=None, new_value=None):
-    """Enregistre l'action avec comparaison claire Ancienne → Nouvelle"""
+    """Version robuste pour debug"""
     try:
-        if action.upper() == "UPDATE" and old_value is not None and new_value is not None:
+        current_user_id = int(current_user_id)   # Sécurité
+
+        if action.upper() == "UPDATE" and old_value and new_value:
             details = f"{old_value} → {new_value}"
         elif action.upper() == "CREATE":
-            details = f"Création : {new_value}"
+            details = f"Création : {new_value or ''}"
         elif action.upper() == "DELETE":
-            details = f"Suppression : {old_value or new_value}"
+            details = f"Suppression : {old_value or new_value or ''}"
         else:
-            details = new_value or ""
+            details = new_value or old_value or ""
 
         log = Historique(
             user_id=current_user_id,
@@ -215,234 +227,182 @@ def log_action(current_user_id, action, entite, entite_id=None, old_value=None, 
             details=details
         )
         db.session.add(log)
-        db.session.commit()
+        db.session.flush()        # Test si l'insertion passe
+        print(f"✅ LOG OK → {action} | {entite} | ID={entite_id}")
+        
     except Exception as e:
         db.session.rollback()
-        print(f"[HISTORIQUE ERREUR] {str(e)}")
+        print(f"❌ [HISTORIQUE ERREUR] {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()     # Affiche l'erreur complète dans la console
 # Gestion des utilisateurs (accessible depuis admin)
+# ===================== GESTION UTILISATEURS =====================
+# ===================== GESTION UTILISATEURS =====================
+
+ROLES_AVEC_DO = {'manager', 'responsable_plateau'}
+
 @app.route('/admin/gestion-utilisateurs', methods=['GET', 'POST'])
 @jwt_required()
 def gestion_utilisateurs():
-    current_user_id = get_jwt_identity()
-    current_user = Utilisateur.query.get(int(current_user_id))
-    
-    # Vérification admin (tu peux garder ton email ou passer à role == 'admin')
+    current_user_id = int(get_jwt_identity())
+    current_user = Utilisateur.query.get(current_user_id)
+
     if not current_user or current_user.email != 'youssefbensaid839@gmail.com':
         flash('Accès réservé à l\'administrateur', 'error')
         return redirect(url_for('admin_dashboard'))
 
     if request.method == 'POST':
         action = request.form.get('action')
-        user_id = request.form.get('user_id')
 
+        # ===================== CREATE =====================
         if action == 'create':
-            nom = request.form.get('nom')
-            prenom = request.form.get('prenom')
-            numtel = request.form.get('numtel')
-            adresse = request.form.get('adresse')
-            email = request.form.get('email')
-            mot_de_passe = request.form.get('mot_de_passe')
+            nom = request.form.get('nom', '').strip()
+            prenom = request.form.get('prenom', '').strip()
+            numtel = request.form.get('numtel', '').strip()
+            email = request.form.get('email', '').strip()
+            mot_de_passe = request.form.get('mot_de_passe', '').strip()
             role = request.form.get('role')
+            do_id_raw = request.form.get('do_id')
 
-            if not all([nom, prenom, numtel, adresse, email, mot_de_passe, role]):
+            if not all([nom, prenom, numtel, email, mot_de_passe, role]):
                 flash('Tous les champs sont obligatoires', 'error')
-                return redirect(url_for('gestion_utilisateurs'))
-
-            if role not in ['admin', 'responsable_plateau', 'manager', 'user']:
-                flash('Rôle invalide', 'error')
                 return redirect(url_for('gestion_utilisateurs'))
 
             if Utilisateur.query.filter_by(email=email).first():
                 flash('Cet email est déjà utilisé', 'error')
                 return redirect(url_for('gestion_utilisateurs'))
 
-            hashed = generate_password_hash(mot_de_passe)
-            nouvel_utilisateur = Utilisateur(
+            # Gestion du DO
+            do_id = None
+            if role in ROLES_AVEC_DO:
+                if do_id_raw and do_id_raw.strip():
+                    do_id = int(do_id_raw)
+                else:
+                    flash('Vous devez sélectionner un Donneur d\'Ordre pour ce rôle.', 'error')
+                    return redirect(url_for('gestion_utilisateurs'))
+
+            hashed_password = generate_password_hash(mot_de_passe)
+
+            new_user = Utilisateur(
                 nom=nom,
                 prenom=prenom,
                 numtel=numtel,
-                adresse=adresse,
                 email=email,
-                mot_de_passe=hashed,
-                role=role
+                mot_de_passe=hashed_password,
+                role=role,
+                do_id=do_id
             )
-            db.session.add(nouvel_utilisateur)
+
+            db.session.add(new_user)
+            db.session.flush()
+
+            do_nom = ""
+            if do_id:
+                do_obj = DonneurdOrdre.query.get(do_id)   # ← Correction ici
+                do_nom = f" | DO: {do_obj.nom}" if do_obj else ""
+
+            log_action(
+                current_user_id,
+                "CREATE",
+                "Utilisateur",
+                entite_id=new_user.id,
+                new_value=f"{nom} {prenom} ({email}) - Rôle: {role}{do_nom}"
+            )
+            db.session.commit()
+            flash('Utilisateur créé avec succès !', 'success')
+
+        # ===================== UPDATE =====================
+        elif action == 'update':
+            user_id = request.form.get('user_id')
+            user = Utilisateur.query.get_or_404(user_id)
+
+            old_do_nom = ""
+            if user.do_id:
+                old_do_obj = DonneurdOrdre.query.get(user.do_id)
+                old_do_nom = f" | DO: {old_do_obj.nom}" if old_do_obj else ""
+
+            old_value = f"{user.nom} {user.prenom} | {user.email} | Rôle: {user.role} | Téléphone: {user.numtel}{old_do_nom}"
+
+            nom = request.form.get('nom', '').strip()
+            prenom = request.form.get('prenom', '').strip()
+            numtel = request.form.get('numtel', '').strip()
+            email = request.form.get('email', '').strip()
+            role = request.form.get('role')
+            do_id_raw = request.form.get('do_id')
+
+            if nom: user.nom = nom
+            if prenom: user.prenom = prenom
+            if numtel: user.numtel = numtel
+            if email: user.email = email
+            if role: user.role = role
+
+            if role in ROLES_AVEC_DO:
+                if do_id_raw and do_id_raw.strip():
+                    user.do_id = int(do_id_raw)
+            else:
+                user.do_id = None
+
+            mot_de_passe = request.form.get('mot_de_passe', '').strip()
+            if mot_de_passe:
+                user.mot_de_passe = generate_password_hash(mot_de_passe)
+
+            new_do_nom = ""
+            if user.do_id:
+                new_do_obj = DonneurdOrdre.query.get(user.do_id)
+                new_do_nom = f" | DO: {new_do_obj.nom}" if new_do_obj else ""
+
+            new_value = f"{user.nom} {user.prenom} | {user.email} | Rôle: {user.role} | Téléphone: {user.numtel}{new_do_nom}"
+
+            log_action(
+                current_user_id,
+                "UPDATE",
+                "Utilisateur",
+                entite_id=user.id,
+                old_value=old_value,
+                new_value=new_value
+            )
             db.session.commit()
 
-            # Envoi email de bienvenue
-            try:
-                send_smtp_email = SendSmtpEmail(
-                    to=[{"email": email, "name": f"{prenom} {nom}"}],
-                    sender={"name": "Plateforme PFE", "email": "youssefbensaid839@gmail.com"},
-                    subject="Bienvenue sur la plateforme - Vos identifiants",
-                    html_content=f"""
-                    <html>
-                        <body style="font-family: Arial, sans-serif; color: #333;">
-                            <h2 style="color: #f97316;">Bienvenue {prenom} !</h2>
-                            <p>Votre compte a été créé par l'administrateur.</p>
-                            
-                            <h3>Vos identifiants :</h3>
-                            <ul style="line-height: 1.8;">
-                                <li><strong>Email :</strong> {email}</li>
-                                <li><strong>Mot de passe :</strong> {mot_de_passe}</li>
-                                <li><strong>Rôle :</strong> {role}</li>
-                            </ul>
-                            
-                            <p style="margin: 20px 0;">
-                                <a href="{url_for('login', _external=True)}" 
-                                   style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                                    Se connecter maintenant
-                                </a>
-                            </p>
-                            
-                            <p style="font-size: 0.9em; color: #666;">
-                                Changez votre mot de passe dès votre première connexion.<br>
-                                Cordialement,<br>
-                                L'équipe de la plateforme
-                            </p>
-                        </body>
-                    </html>
-                    """
-                )
-                api_instance.send_transac_email(send_smtp_email)
-                flash('Utilisateur créé et email envoyé', 'success')
-            except ApiException as e:
-                flash(f'Utilisateur créé mais erreur email : {str(e)}', 'warning')
+            flash('Utilisateur modifié avec succès !', 'success')
 
-        elif action == 'update':
-            user = Utilisateur.query.get(user_id)
-            if user:
-                ancien_role = user.role
-
-                user.nom = request.form.get('nom', user.nom)
-                user.prenom = request.form.get('prenom', user.prenom)
-                user.numtel = request.form.get('numtel', user.numtel)
-                user.adresse = request.form.get('adresse', user.adresse)
-                user.email = request.form.get('email', user.email)
-                user.role = request.form.get('role', user.role)
-
-                db.session.commit()
-
-                # Envoi email de confirmation si rôle changé
-                if ancien_role != user.role:
-                    try:
-                        send_smtp_email = SendSmtpEmail(
-                            to=[{"email": user.email, "name": f"{user.prenom} {user.nom}"}],
-                            sender={"name": "Plateforme PFE", "email": "youssefbensaid839@gmail.com"},
-                            subject="Modification de votre rôle sur la plateforme",
-                            html_content=f"""
-                            <html>
-                                <body style="font-family: Arial, sans-serif; color: #333;">
-                                    <h2 style="color: #f97316;">Bonjour {user.prenom},</h2>
-                                    <p>Votre rôle a été modifié par l'administrateur.</p>
-                                    <h3>Nouveau rôle :</h3>
-                                    <p style="font-size: 1.2em; font-weight: bold;">{user.role}</p>
-                                    <p>Vous pouvez désormais accéder aux fonctionnalités correspondantes.</p>
-                                    <p style="margin: 20px 0;">
-                                        <a href="{url_for('login', _external=True)}" 
-                                           style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                                            Se connecter
-                                        </a>
-                                    </p>
-                                    <p style="font-size: 0.9em; color: #666;">
-                                        Cordialement,<br>
-                                        L'équipe de la plateforme
-                                    </p>
-                                </body>
-                            </html>
-                            """
-                        )
-                        api_instance.send_transac_email(send_smtp_email)
-                        flash('Utilisateur modifié et email de confirmation envoyé', 'success')
-                    except ApiException as e:
-                        flash('Utilisateur modifié mais erreur envoi email', 'warning')
-                else:
-                    flash('Utilisateur modifié avec succès', 'success')
-            else:
-                flash('Utilisateur introuvable', 'error')
-
+        # ===================== DELETE =====================
         elif action == 'delete':
-            user = Utilisateur.query.get(user_id)
-            if user:
-                db.session.delete(user)
-                db.session.commit()
-                flash('Utilisateur supprimé avec succès', 'success')
-            else:
-                flash('Utilisateur introuvable', 'error')
+            user_id = request.form.get('user_id')
+            user = Utilisateur.query.get_or_404(user_id)
+
+            if user.email == 'youssefbensaid839@gmail.com':
+                flash('Impossible de supprimer le compte administrateur principal', 'error')
+                return redirect(url_for('gestion_utilisateurs'))
+
+            do_nom = ""
+            if user.do_id:
+                do_obj = DonneurdOrdre.query.get(user.do_id)
+                do_nom = f" | DO: {do_obj.nom}" if do_obj else ""
+
+            old_value = f"{user.nom} {user.prenom} ({user.email}) - Rôle: {user.role}{do_nom}"
+
+            log_action(
+                current_user_id,
+                "DELETE",
+                "Utilisateur",
+                entite_id=user.id,
+                old_value=old_value
+            )
+
+            db.session.delete(user)
+            db.session.commit()
+            flash('Utilisateur supprimé avec succès', 'success')
 
         return redirect(url_for('gestion_utilisateurs'))
 
+    # GET - Affichage liste
     utilisateurs = Utilisateur.query.all()
-    return render_template('admin_gestion_utilisateurs.html', utilisateurs=utilisateurs)
+    donneurs = DonneurdOrdre.query.all()
 
-# Modifier un utilisateur existant
-@app.route('/admin/utilisateur/<int:user_id>/modifier', methods=['GET', 'POST'])
-@jwt_required()
-def modifier_utilisateur(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = Utilisateur.query.get(int(current_user_id))
-    if not current_user or current_user.email != 'youssefbensaid839@gmail.com':
-        flash('Accès réservé à l\'administrateur', 'error')
-        return redirect(url_for('admin_dashboard'))
+    return render_template('admin_gestion_utilisateurs.html', 
+                           utilisateurs=utilisateurs, 
+                           donneurs=donneurs)
 
-    utilisateur = Utilisateur.query.get_or_404(user_id)
-
-    if request.method == 'POST':
-        nom = request.form.get('nom')
-        prenom = request.form.get('prenom')
-        numtel = request.form.get('numtel')
-        adresse = request.form.get('adresse')
-        email = request.form.get('email')
-        mot_de_passe = request.form.get('mot_de_passe')
-
-        if not all([nom, prenom, numtel, adresse, email]):
-            flash('Tous les champs obligatoires doivent être remplis', 'error')
-            return redirect(url_for('modifier_utilisateur', user_id=user_id))
-
-        # Vérifier si l'email change et s'il est déjà pris
-        if email != utilisateur.email and Utilisateur.query.filter_by(email=email).first():
-            flash('Cet email est déjà utilisé par un autre utilisateur', 'error')
-            return redirect(url_for('modifier_utilisateur', user_id=user_id))
-
-        utilisateur.nom = nom
-        utilisateur.prenom = prenom
-        utilisateur.numtel = numtel
-        utilisateur.adresse = adresse
-        utilisateur.email = email
-
-        # Si mot de passe saisi, on le met à jour
-        if mot_de_passe and mot_de_passe.strip():
-            utilisateur.mot_de_passe = generate_password_hash(mot_de_passe)
-
-        db.session.commit()
-        flash('Utilisateur modifié avec succès !', 'success')
-        return redirect(url_for('gestion_utilisateurs'))
-
-    return render_template('admin_modifier_utilisateur.html', utilisateur=utilisateur)
-
-
-# Supprimer un utilisateur
-@app.route('/admin/utilisateur/<int:user_id>/supprimer', methods=['POST'])
-@jwt_required()
-def supprimer_utilisateur(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = Utilisateur.query.get(int(current_user_id))
-    if not current_user or current_user.email != 'youssefbensaid839@gmail.com':
-        flash('Accès réservé à l\'administrateur', 'error')
-        return redirect(url_for('admin_dashboard'))
-
-    utilisateur = Utilisateur.query.get_or_404(user_id)
-
-    # On empêche de supprimer l'admin par défaut (par sécurité)
-    if utilisateur.email == 'youssefbensaid839@gmail.com':
-        flash('Impossible de supprimer le compte administrateur principal', 'error')
-        return redirect(url_for('gestion_utilisateurs'))
-
-    db.session.delete(utilisateur)
-    db.session.commit()
-
-    flash('Utilisateur supprimé avec succès', 'success')
-    return redirect(url_for('gestion_utilisateurs'))
 # Dashboard Responsable Plateau (vide pour l'instant)
 @app.route('/responsable-dashboard')
 @jwt_required()
@@ -554,61 +514,76 @@ def responsable_creation_comptes():
 # =========================================================================
 # GESTION DES DONNEURS D'ORDRE (DO)
 # =========================================================================
-@app.route('/admin/gestion-donneurs-ordre', methods=['GET', 'POST'])
+@app.route('/gestion-donneurs-ordre', methods=['GET', 'POST'])
 @jwt_required()
 def gestion_donneurs_ordre():
-    current_user_id = int(get_jwt_identity())
-    current_user = Utilisateur.query.get(current_user_id)
+    current_user_id = get_jwt_identity()
+    current_user = Utilisateur.query.get(int(current_user_id))
+    
     if not current_user or current_user.role != 'admin':
         flash('Accès réservé à l\'administrateur', 'error')
         return redirect(url_for('admin_dashboard'))
 
     if request.method == 'POST':
         action = request.form.get('action')
-        do_id = request.form.get('do_id')
 
         if action == 'create':
-            do = DonneurdOrdre(
+            donneur = DonneurdOrdre(
                 nom=request.form.get('nom'),
                 adresse=request.form.get('adresse'),
                 telephone=request.form.get('telephone'),
                 email=request.form.get('email')
             )
-            db.session.add(do)
+            log_action(current_user_id, "CREATE", "DonneurdOrdre", donneur.id, new_value=donneur.nom)
+            db.session.add(donneur)
             db.session.commit()
-            log_action(current_user_id, "CREATE", "DonneurdOrdre", do.id, None, do.nom)
+            flash('Donneur d\'Ordre créé avec succès', 'success')
 
         elif action == 'update':
-            do = DonneurdOrdre.query.get(do_id)
-            if do:
-                # Sauvegarde de l'ancienne valeur complète
-                old_value = f"{do.nom} | {do.adresse} | {do.telephone} | {do.email}"
-                
-                # Mise à jour des champs
-                do.nom = request.form.get('nom', do.nom)
-                do.adresse = request.form.get('adresse', do.adresse)
-                do.telephone = request.form.get('telephone', do.telephone)
-                do.email = request.form.get('email', do.email)
-                
-                db.session.commit()
-                
-                # Nouvelle valeur complète
-                new_value = f"{do.nom} | {do.adresse} | {do.telephone} | {do.email}"
-                
-                log_action(current_user_id, "UPDATE", "DonneurdOrdre", do.id, old_value, new_value)
-
+            donneur_id = request.form.get('donneur_id')
+            donneur = DonneurdOrdre.query.get_or_404(donneur_id)
+            old_value = f"{donneur.nom} | {donneur.adresse} | {donneur.email} | {donneur.telephone}"
+            
+            donneur.nom = request.form.get('nom')
+            donneur.adresse = request.form.get('adresse')
+            donneur.telephone = request.form.get('telephone')
+            donneur.email = request.form.get('email')
+            new_value = f"{donneur.nom} | {donneur.adresse} | {donneur.email} | {donneur.telephone}"
+            log_action(current_user_id, "UPDATE", "DonneurdOrdre", entite_id=donneur.id,
+                old_value=old_value,
+                new_value=new_value
+            )
+            
+            db.session.commit()
+            flash('Donneur d\'Ordre modifié avec succès', 'success')
+        
+        
         elif action == 'delete':
-            do = DonneurdOrdre.query.get(do_id)
-            if do:
-                deleted_info = f"{do.nom} | {do.adresse}"
-                log_action(current_user_id, "DELETE", "DonneurdOrdre", do.id, deleted_info)
-                db.session.delete(do)
-                db.session.commit()
+            donneur_id = request.form.get('donneur_id')
+            donneur = DonneurdOrdre.query.get_or_404(donneur_id)
+
+            # Sauvegarder les anciennes données pour l'historique
+            old_value = f"{donneur.nom} | {donneur.adresse} | {donneur.email} | {donneur.telephone}"
+
+            # Log AVANT suppression
+            log_action(
+                current_user_id,
+                "DELETE",
+                "DonneurdOrdre",
+                entite_id=donneur.id,
+                old_value=old_value
+            )
+
+            db.session.delete(donneur)
+            db.session.commit()
+
+            flash('Donneur d\'Ordre supprimé avec succès', 'success')
 
         return redirect(url_for('gestion_donneurs_ordre'))
-
+    # GET request
     donneurs = DonneurdOrdre.query.all()
     return render_template('admin_gestion_donneurs_ordre.html', donneurs=donneurs)
+
 
 
 # =========================================================================
@@ -634,10 +609,11 @@ def gestion_campagnes():
                 date_fin=request.form.get('date_fin'),
                 do_id=request.form.get('do_id')
             )
+            
+            log_action(current_user_id, "CREATE", "Campagne", campagne.id, None, campagne.nom)
             db.session.add(campagne)
             db.session.commit()
-            log_action(current_user_id, "CREATE", "Campagne", campagne.id, None, campagne.nom)
-
+            flash('Campagne créé avec succès', 'success')
         elif action == 'update':
             campagne = Campagne.query.get(campagne_id)
             if campagne:
@@ -649,12 +625,14 @@ def gestion_campagnes():
                 campagne.date_fin = request.form.get('date_fin', campagne.date_fin)
                 campagne.do_id = request.form.get('do_id', campagne.do_id)
                 
-                db.session.commit()
+                
                 
                 # Nouvelle valeur complète
                 new_value = f"{campagne.nom} | {campagne.date_debut} → {campagne.date_fin} | DO:{campagne.do_id}"
                 
                 log_action(current_user_id, "UPDATE", "Campagne", campagne.id, old_value, new_value)
+                db.session.commit()
+                flash('Campagne modifié avec succès', 'success')
 
         elif action == 'delete':
             campagne = Campagne.query.get(campagne_id)
@@ -663,6 +641,7 @@ def gestion_campagnes():
                 log_action(current_user_id, "DELETE", "Campagne", campagne.id, deleted_info)
                 db.session.delete(campagne)
                 db.session.commit()
+                flash('Campagne supprimé avec succès', 'success')
 
         return redirect(url_for('gestion_campagnes'))
 
@@ -691,9 +670,11 @@ def gestion_npv():
                 statut=request.form.get('statut'),
                 campagne_id=request.form.get('campagne_id')
             )
+            
+            log_action(current_user_id, "CREATE", "NPV", npv.id, None, npv.numero)
             db.session.add(npv)
             db.session.commit()
-            log_action(current_user_id, "CREATE", "NPV", npv.id, None, npv.numero)
+            flash('Npv créé avec succès', 'success')
 
         elif action == 'update':
             npv = NPV.query.get(npv_id)
@@ -704,10 +685,12 @@ def gestion_npv():
                 npv.statut = request.form.get('statut', npv.statut)
                 npv.campagne_id = request.form.get('campagne_id', npv.campagne_id)
                 
-                db.session.commit()
+                
                 
                 new_value = f"{npv.numero} ({npv.statut}) | Campagne:{npv.campagne_id}"
                 log_action(current_user_id, "UPDATE", "NPV", npv.id, old_value, new_value)
+                db.session.commit()
+                flash('Npv modifié avec succès', 'success')
 
         elif action == 'delete':
             npv = NPV.query.get(npv_id)
@@ -715,14 +698,13 @@ def gestion_npv():
                 log_action(current_user_id, "DELETE", "NPV", npv.id, npv.numero)
                 db.session.delete(npv)
                 db.session.commit()
+                flash('Npv supprimée avec succès', 'success')
 
         return redirect(url_for('gestion_npv'))
 
     npvs = NPV.query.options(joinedload(NPV.campagne)).all()
     campagnes = Campagne.query.all()
     return render_template('admin_gestion_npv.html', npvs=npvs, campagnes=campagnes)
-
-
 
 # ===================== GESTION OPÉRATEURS =====================
 @app.route('/admin/gestion-operateurs', methods=['GET', 'POST'])
@@ -744,9 +726,11 @@ def gestion_operateurs():
                 code=request.form.get('code'),
                 pays=request.form.get('pays')
             )
+            
+            log_action(current_user_id, "CREATE", "Operateur", operateur.id, None, operateur.nom)
             db.session.add(operateur)
             db.session.commit()
-            log_action(current_user_id, "CREATE", "Operateur", operateur.id, None, operateur.nom)
+            flash('Operateur créé avec succès', 'success')
 
         elif action == 'update':
             operateur = Operateur.query.get(operateur_id)
@@ -755,44 +739,44 @@ def gestion_operateurs():
                 
                 operateur.nom = request.form.get('nom', operateur.nom)
                 operateur.code = request.form.get('code', operateur.code)
-                operateur.pays = request.form.get('pays', operateur.pays)
-                
-                db.session.commit()
+                operateur.pays = request.form.get('pays')
                 
                 new_value = f"{operateur.nom} ({operateur.code}) | {operateur.pays or '—'}"
                 log_action(current_user_id, "UPDATE", "Operateur", operateur.id, old_value, new_value)
-
+                db.session.commit()
+                flash('Operateur modifié avec succès', 'success')
+             
         elif action == 'delete':
             operateur = Operateur.query.get(operateur_id)
             if operateur:
                 log_action(current_user_id, "DELETE", "Operateur", operateur.id, operateur.nom)
                 db.session.delete(operateur)
                 db.session.commit()
+                flash('Operateur supprimée avec succès', 'success')
 
         return redirect(url_for('gestion_operateurs'))
 
     operateurs = Operateur.query.all()
     return render_template('admin_gestion_operateurs.html', operateurs=operateurs)
+
 # ===================== HISTORIQUE GLOBAL =====================
 @app.route('/admin/historique')
 @jwt_required()
 def historique():
     current_user_id = int(get_jwt_identity())
     current_user = Utilisateur.query.get(current_user_id)
-    
-    if not current_user or current_user.role != 'admin':
+
+    if not current_user or current_user.email != 'youssefbensaid839@gmail.com':
         flash('Accès réservé à l\'administrateur', 'error')
         return redirect(url_for('admin_dashboard'))
 
-    # Récupère l'historique du plus récent au plus ancien
-    historiques = Historique.query.order_by(Historique.date_action.desc()).all()
+    # Récupération + jointure avec l'utilisateur pour afficher le nom
+    historiques = Historique.query\
+        .options(joinedload(Historique.user))\
+        .order_by(Historique.date_action.desc())\
+        .all()
 
     return render_template('admin_historique.html', historiques=historiques)
 
-
 if __name__ == '__main__':
     app.run(debug=True)
-    
-    
-    
-    #test

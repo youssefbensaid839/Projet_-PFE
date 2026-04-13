@@ -5,81 +5,253 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historique des Actions</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { 
+                        primary: '#f97316',
+                        primaryDark: '#c2410c'
+                    } 
+                } 
+            } 
+        }
+    </script>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
+    <!-- Header -->
     <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <button onclick="openSidebar()" 
+                    class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Menu</span>
+            </button>
+
+            <h1 class="text-2xl font-bold text-gray-900">Historique des Actions</h1>
+
             <div class="flex items-center gap-3">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10">
-                <h1 class="text-2xl font-bold text-gray-900">Historique Global des Actions</h1>
+                <!-- Bouton Filtrer -->
+                <button onclick="toggleFilterDropdown()" 
+                        class="flex items-center gap-2 bg-white border border-gray-300 hover:border-orange-500 px-5 py-3 rounded-2xl font-medium transition">
+                    
+                    <span>Filtrer</span>
+                </button>
+
+                <!-- Bouton Exporter -->
+                <button onclick="exportHistorique()" 
+                        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-medium transition">
+                    
+                    <span>Exporter CSV</span>
+                </button>
             </div>
-            <a href="{{ url_for('admin_dashboard') }}" 
-               class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-medium transition">
-                ← Retour au Dashboard
-            </a>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div class="p-6">
-                <table id="historiqueTable" class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="px-4 py-3 text-left">Date</th>
-                            <th class="px-4 py-3 text-left">Utilisateur</th>
-                            <th class="px-4 py-3 text-left">Action</th>
-                            <th class="px-4 py-3 text-left">Entité</th>
-                            <th class="px-4 py-3 text-left">Détails</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for h in historiques %}
-                        <tr class="hover:bg-orange-50">
-                            <td class="px-4 py-3">{{ h.date_action.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                            <td class="px-4 py-3 font-medium">{{ h.user.prenom }} {{ h.user.nom }}</td>
-                            <td class="px-4 py-3">
-                                {% if h.action == 'CREATE' %}
-                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">CRÉATION</span>
-                                {% elif h.action == 'UPDATE' %}
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">MODIFICATION</span>
-                                {% elif h.action == 'DELETE' %}
-                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">SUPPRESSION</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-3 font-medium">{{ h.entite }}</td>
-                            <td class="px-4 py-3 text-sm">
-                                {% if '→' in h.details %}
-                                    <span class="text-red-600">{{ h.details.split(' → ')[0] }}</span>
-                                    <span class="text-gray-400 mx-2">→</span>
-                                    <span class="text-green-600 font-medium">{{ h.details.split(' → ')[1] }}</span>
-                                {% else %}
-                                    {{ h.details or '—' }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <div class="mb-6">
+            <input type="text" id="searchInput" 
+                   onkeyup="searchTable()" 
+                   placeholder="Rechercher dans l'historique..." 
+                   class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-orange-500">
         </div>
+
+        <div class="bg-white rounded-3xl shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Date</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Utilisateur</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Action</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Entité</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Détails</th>
+                    </tr>
+                </thead>
+                <tbody id="historiqueTable" class="divide-y divide-gray-200">
+                    {% for h in historiques %}
+                    <tr class="hover:bg-orange-50 transition" data-entite="{{ h.entite }}">
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ h.date_action.strftime('%d/%m/%Y %H:%M:%S') if h.date_action else '—' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium">
+                            {{ h.user.nom }} {{ h.user.prenom }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full
+                                {% if h.action == 'CREATE' %}bg-green-100 text-green-700{% elif h.action == 'UPDATE' %}bg-blue-100 text-blue-700{% elif h.action == 'DELETE' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ h.action }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 font-medium">{{ h.entite }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ h.details or '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center text-gray-500">
+                            Aucun enregistrement dans l'historique pour le moment.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Dropdown Filtre -->
+    <div id="filterDropdown" class="hidden fixed top-20 right-10 bg-white shadow-xl rounded-2xl border border-gray-200 w-64 py-2 z-50">
+        <div class="px-4 py-3 text-sm font-medium text-gray-500 border-b">Filtrer par Entité</div>
+        <button onclick="filterByEntity('all')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            📋 Toutes les entités
+        </button>
+        <button onclick="filterByEntity('Utilisateur')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            👤 Utilisateur
+        </button>
+        <button onclick="filterByEntity('Campagne')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            📣 Campagne
+        </button>
+        <button onclick="filterByEntity('NPV')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            📞 NPV
+        </button>
+        <button onclick="filterByEntity('DO')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            🏢 DO (Donneur d'Ordre)
+        </button>
+        <button onclick="filterByEntity('Operateur')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
+            📡 Opérateur
+        </button>
     </div>
 
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+        <!-- ... ton sidebar actuel ... -->
+        <div class="p-5 flex justify-between items-center border-b">
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
+                <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+            </div>
+            <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
+        </div>
+
+        <nav class="p-5 space-y-1">
+            <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
+            <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
+            <a href="{{ url_for('gestion_donneurs_ordre') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des DO</a>
+            <a href="{{ url_for('gestion_campagnes') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des campagnes</a>
+            <a href="{{ url_for('gestion_npv') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des NPV</a>
+            <a href="{{ url_for('gestion_operateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des opérateurs</a>
+            <a href="{{ url_for('historique') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition bg-orange-50 text-primary">Historique global des actions</a>
+        </nav>
+    </aside>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            new simpleDatatables.DataTable("#historiqueTable", {
-                perPage: 15,
-                searchable: true,
-                sortable: true,
-                labels: {
-                    placeholder: "Rechercher dans l'historique...",
-                    perPage: "entrées par page",
-                    noRows: "Aucune action trouvée",
-                    info: "Affichage de {start} à {end} sur {rows} actions"
-                }
+        // Recherche texte
+        function searchTable() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("#historiqueTable tr");
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
             });
+        }
+
+        // Filtrage par entité (version améliorée et plus robuste)
+function filterByEntity(entity) {
+    const rows = document.querySelectorAll("#historiqueTable tr");
+
+    rows.forEach(row => {
+        if (entity === 'all') {
+            row.style.display = "";
+            return;
+        }
+
+        const entiteDansTable = (row.getAttribute('data-entite') || '').toLowerCase().trim();
+        const entiteRecherchee = entity.toLowerCase().trim();
+
+        // Normalisation pour matcher "DO", "DonneurdOrdre", "Donneur d'Ordre", etc.
+        const match = 
+            entiteDansTable === entiteRecherchee ||
+            entiteDansTable.includes(entiteRecherchee) ||
+            entiteRecherchee.includes(entiteDansTable) ||
+            (entiteRecherchee === 'do' && (entiteDansTable.includes('donneur') || entiteDansTable.includes('do')));
+
+        row.style.display = match ? "" : "none";
+    });
+
+    document.getElementById('filterDropdown').classList.add('hidden');
+}
+
+        function toggleFilterDropdown() {
+            document.getElementById('filterDropdown').classList.toggle('hidden');
+        }
+
+        // ===================== EXPORT CSV (version améliorée) =====================
+function exportHistorique() {
+    const rows = document.querySelectorAll("#historiqueTable tr");
+    let csvContent = "Date,Utilisateur,Action,Entité,Détails\r\n";   // virgule comme délimiteur
+
+    rows.forEach(row => {
+        if (row.style.display !== "none" && row.cells.length > 1) {
+            const date = row.cells[0].innerText.trim().replace(/"/g, '""');
+            const user = row.cells[1].innerText.trim().replace(/"/g, '""');
+            const action = row.cells[2].innerText.trim().replace(/"/g, '""');
+            const entite = row.cells[3].innerText.trim().replace(/"/g, '""');
+            const details = row.cells[4].innerText.trim().replace(/"/g, '""');
+
+            csvContent += `"${date}","${user}","${action}","${entite}","${details}"\r\n`;
+        }
+    });
+
+    // Création du nom de fichier avec date et heure actuelle
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() +
+                    String(now.getMonth() + 1).padStart(2, '0') +
+                    String(now.getDate()).padStart(2, '0') + "_" +
+                    String(now.getHours()).padStart(2, '0') +
+                    String(now.getMinutes()).padStart(2, '0') +
+                    String(now.getSeconds()).padStart(2, '0');
+
+    const filename = `historique_${dateStr}.csv`;
+
+    // Encodage latin-1 + BOM pour Excel
+    const blob = new Blob(["\uFEFF" + csvContent], { 
+        type: 'text/csv;charset=latin1;' 
+    });
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+        // Sidebar functions
+        function openSidebar() {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar').classList.add('translate-x-0');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('translate-x-0');
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+
+        // Fermer dropdown et sidebar en cliquant dehors
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuButton = document.querySelector('button[onclick="openSidebar()"]');
+            const filterDropdown = document.getElementById('filterDropdown');
+
+            if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) {
+                closeSidebar();
+            }
+            if (!event.target.closest('button[onclick="toggleFilterDropdown()"]') && 
+                !filterDropdown.contains(event.target)) {
+                filterDropdown.classList.add('hidden');
+            }
         });
     </script>
 </body>

@@ -5,148 +5,414 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Donneurs d'Ordre</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet">
     <style>
-        .dataTable-wrapper .dataTable-container { overflow-x: auto; }
-        .btn-edit { background-color: #3b82f6; color: white; }
-        .btn-delete { background-color: #ef4444; color: white; }
+        .success-msg { animation: fadeOut 5s forwards; }
+        @keyframes fadeOut { 0% {opacity:1} 70% {opacity:1} 100% {opacity:0} }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
 
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10">
-                <h1 class="text-2xl font-bold text-gray-900">Gestion des Donneurs d'Ordre</h1>
+<div class="max-w-screen-2xl mx-auto px-6 py-6">
+
+    <div class="flex items-center justify-between mb-8">
+        <!-- Bouton Menu Orange -->
+<button onclick="openSidebar()" 
+        class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+    <span>Menu</span>
+</button>
+        <h1 class="text-3xl font-bold">Gestion des Donneurs d'Ordre</h1>
+
+        <div class="flex items-center gap-3">
+            <div class="relative w-80">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher DO..." 
+                       class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
+                <div class="absolute left-4 top-3.5 text-gray-400 text-xl">🔍︎</div>
             </div>
-            <a href="{{ url_for('admin_dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-medium transition">← Retour au Dashboard</a>
-        </div>
-    </header>
 
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div class="px-6 py-5 border-b flex justify-between items-center bg-orange-50">
-                <h2 class="text-lg font-semibold text-gray-800">Liste des Donneurs d'Ordre</h2>
-                <button onclick="openModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 shadow transition">
-                    <span class="text-xl">+</span> Nouveau DO
+           
+
+            <button onclick="openModal()" 
+                    class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
+                <span class="text-2xl">+</span> Nouveau DO
+            </button>
+
+            <button onclick="toggleDarkMode()" class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500">
+                <span id="theme-icon" class="text-2xl">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="success-msg mb-6 px-6 py-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-2xl">
+                    ✅ {{ msg }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow overflow-hidden">
+        <table id="doTable" class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                <tr>
+                    <th class="px-8 py-5 text-left">ID</th>
+                    <th class="px-8 py-5 text-left">Nom</th>
+                    <th class="px-8 py-5 text-left">Adresse</th>
+                    <th class="px-8 py-5 text-left">Téléphone</th>
+                    <th class="px-8 py-5 text-left">Email</th>
+                    <th class="px-8 py-5 text-center w-36">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for d in donneurs %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-8 py-5">{{ d.id }}</td>
+                    <td class="px-8 py-5">{{ d.nom }}</td>
+                    <td class="px-8 py-5">{{ d.adresse }}</td>
+                    <td class="px-8 py-5">{{ d.telephone }}</td>
+                    <td class="px-8 py-5">{{ d.email }}</td>
+                    <td class="px-8 py-5">
+                    
+    <div class="flex items-center justify-center gap-8">
+        <!-- Modifier -->
+        <button onclick="editDO({{ d.id }}, '{{ d.nom }}', '{{ d.adresse }}', '{{ d.telephone }}', '{{ d.email }}')">
+            <img src="{{ url_for('static', filename='images/gear.png') }}" width="60" height="60" alt="Modifier">
+        </button>
+
+        <!-- Supprimer avec modal orange -->
+        <button onclick="showDeleteModal({{ d.id }}, '{{ d.nom }}')" 
+                class="hover:scale-110 transition">
+            <img src="{{ url_for('static', filename='images/trash.png') }}" width="60" height="60" alt="Supprimer">
+        </button>
+    </div>
+</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL -->
+<!-- Modal Suppression Orange -->
+<div id="deleteModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-orange-600 text-white px-8 py-6 text-center">
+            <div class="mx-auto w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                <img src="{{ url_for('static', filename='images/trash.png') }}" width="50" height="50" class="opacity-90">
+            </div>
+            <h3 class="text-2xl font-bold">Supprimer le Donneur d'Ordre ?</h3>
+        </div>
+
+        <div class="p-8 text-center">
+            <p id="deleteMessage" class="text-gray-700 dark:text-gray-300 text-lg mb-10"></p>
+
+            <div class="flex gap-4">
+                <button onclick="closeDeleteModal()" 
+                        class="flex-1 py-4 text-gray-700 font-medium border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    Non, annuler
+                </button>
+                <button onclick="confirmDeleteAction()" 
+                        class="flex-1 py-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl transition">
+                    Oui, supprimer
                 </button>
             </div>
-
-            <div class="p-6">
-                <table id="doTable" class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-left">
-                            <th class="px-4 py-3">ID</th>
-                            <th class="px-4 py-3">Nom</th>
-                            <th class="px-4 py-3">Adresse</th>
-                            <th class="px-4 py-3">Téléphone</th>
-                            <th class="px-4 py-3">Email</th>
-                            <th class="px-4 py-3 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for d in donneurs %}
-                        <tr class="hover:bg-orange-50 transition">
-                            <td class="px-4 py-3 text-gray-500">{{ d.id }}</td>
-                            <td class="px-4 py-3 font-medium">{{ d.nom }}</td>
-                            <td class="px-4 py-3">{{ d.adresse }}</td>
-                            <td class="px-4 py-3">{{ d.telephone }}</td>
-                            <td class="px-4 py-3">{{ d.email }}</td>
-                            <td class="px-4 py-3 text-center space-x-2">
-                                <button onclick="editDO({{ d.id }}, '{{ d.nom }}', '{{ d.adresse }}', '{{ d.telephone }}', '{{ d.email }}')" 
-                                        class="btn-edit px-5 py-1.5 rounded-xl text-xs font-medium">Modifier</button>
-                                <button onclick="deleteDO({{ d.id }})" 
-                                        class="btn-delete px-5 py-1.5 rounded-xl text-xs font-medium">Supprimer</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
+</div>
+<div id="doModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="px-8 pt-8 pb-6">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nouveau Donneur d'Ordre</h2>
+            
+            <!-- Formulaire avec validation -->
+            <form method="POST" id="doForm" onsubmit="return validateDOForm()" class="space-y-6">
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" name="donneur_id" id="donneurId">
 
-    <!-- Modal Scrollable -->
-    <div id="modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden">
-            <div class="px-6 py-5 bg-orange-500 text-white flex justify-between items-center flex-shrink-0">
-                <h2 id="modalTitle" class="text-xl font-semibold">Nouveau Donneur d'Ordre</h2>
-                <button onclick="closeModal()" class="text-3xl leading-none hover:text-orange-200">×</button>
-            </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Nom <span class="text-red-500">*</span></label>
+                    <input type="text" name="nom" id="nom" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Adresse <span class="text-red-500">*</span></label>
+                    <input type="text" name="adresse" id="adresse" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                </div>
+                <div>
+    <label class="block text-sm font-medium mb-2">Téléphone <span class="text-red-500">*</span></label>
 
-            <div class="p-6 overflow-y-auto flex-1">
-                <form method="POST" id="doForm">
-                    <input type="hidden" name="action" id="formAction" value="create">
-                    <input type="hidden" name="do_id" id="doId">
+    <div class="relative z-20">
+        <!-- Bouton pays -->
+        <button type="button" onclick="toggleCountryDropdown()" 
+                class="absolute left-0 top-0 bottom-0 px-5 flex items-center gap-2 bg-gray-100 border border-r-0 rounded-l-2xl z-20">
+            <span id="selectedFlag" class="text-2xl">🇹🇳</span>
+            <span id="selectedCode" class="font-semibold text-sm">+216</span>
+        </button>
 
-                    <div class="space-y-5">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                            <input type="text" name="nom" id="nom" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                            <input type="text" name="adresse" id="adresse" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                            <input type="text" name="telephone" id="telephone" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" name="email" id="email" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                    </div>
-                </form>
-            </div>
+        <input type="hidden" name="code_pays" id="code_pays" value="+216">
 
-            <div class="px-6 py-5 border-t bg-gray-50 flex gap-3 flex-shrink-0">
-                <button onclick="closeModal()" class="flex-1 py-3 text-gray-700 font-medium border border-gray-300 rounded-2xl hover:bg-gray-100">Annuler</button>
-                <button onclick="document.getElementById('doForm').submit()" class="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl">Enregistrer</button>
-            </div>
-        </div>
+        <!-- Input téléphone -->
+        <input type="tel" 
+               name="telephone" 
+               id="telephone" 
+               maxlength="11"
+               placeholder="12345678"
+               class="w-full pl-28 pr-5 py-3 border border-gray-300 rounded-2xl"
+               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)">
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            new simpleDatatables.DataTable("#doTable", {
-                perPage: 10, searchable: true, sortable: true,
-                labels: { placeholder: "Rechercher...", perPage: "entrées par page", noRows: "Aucun DO trouvé" }
-            });
+    <p class="text-xs text-gray-500 mt-1">Maximum 11 chiffres</p>
+</div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email <span class="text-red-500">*</span></label>
+                    <input type="email" 
+                           name="email" 
+                           id="email" 
+                           required 
+                           placeholder="exemple@domaine.com"
+                           class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500"
+                           oninvalid="this.setCustomValidity('Veuillez entrer une adresse email valide (ex: nom@domaine.com)')"
+                           oninput="this.setCustomValidity('')">
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-gray-50 px-8 py-5 flex gap-3 rounded-b-3xl">
+            <button onclick="closeModal()" 
+                    class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100">Annuler</button>
+            
+            <!-- Bouton corrigé -->
+            <button type="submit" 
+                    form="doForm"
+                    class="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl">Enregistrer</button>
+        </div>
+    </div>
+</div>
+<div id="countryDropdown" 
+     class="hidden fixed z-[9999] bg-white dark:bg-gray-800 border rounded-2xl shadow-xl w-96 overflow-y-auto"
+     style="max-height: 300px;">
+</div>
+<!-- SIDEBAR -->
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+    <div class="p-5 flex justify-between items-center border-b">
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
+            <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+        </div>
+        <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
+    </div>
+
+    <nav class="p-5 space-y-1">
+        <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
+        <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
+        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des DO</a>
+        <a href="{{ url_for('gestion_campagnes') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des campagnes</a>
+        <a href="{{ url_for('gestion_npv') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des NPV</a>
+        <a href="{{ url_for('gestion_operateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des opérateurs</a>
+        <a href="{{ url_for('historique') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Historique global des actions</a>
+    </nav>
+</aside>
+
+<script>
+    function searchTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        document.querySelectorAll("#doTable tbody tr").forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
         });
+    }
 
-        function openModal() {
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('modalTitle').textContent = "Nouveau Donneur d'Ordre";
-            document.getElementById('formAction').value = "create";
-            document.getElementById('doForm').reset();
-        }
+    function toggleDarkMode() {
+        document.documentElement.classList.toggle('dark');
+        document.getElementById('theme-icon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+    }
 
-        function editDO(id, nom, adresse, telephone, email) {
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('modalTitle').textContent = "Modifier le DO";
-            document.getElementById('formAction').value = "update";
-            document.getElementById('doId').value = id;
-            document.getElementById('nom').value = nom;
-            document.getElementById('adresse').value = adresse;
-            document.getElementById('telephone').value = telephone;
-            document.getElementById('email').value = email;
-        }
+    function openModal() {
+        document.getElementById('doModal').classList.remove('hidden');
+        document.getElementById('modalTitle').textContent = 'Nouveau Donneur d\'Ordre';
+        document.getElementById('formAction').value = 'create';
+        document.getElementById('doForm').reset();
+    }
 
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
+    function editDO(id, nom, adresse, telephone, email) {
+        document.getElementById('doModal').classList.remove('hidden');
+        document.getElementById('modalTitle').textContent = 'Modifier DO';
+        document.getElementById('formAction').value = 'update';
+        document.getElementById('donneurId').value = id;
+        document.getElementById('nom').value = nom;
+        document.getElementById('adresse').value = adresse;
+        document.getElementById('telephone').value = telephone;
+        document.getElementById('email').value = email;
+    }
 
-        document.getElementById('modal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
+    function closeModal() {
+        document.getElementById('doModal').classList.add('hidden');
+    }
+    function openSidebar() {
+    document.getElementById('sidebar').classList.remove('-translate-x-full');
+    document.getElementById('sidebar').classList.add('translate-x-0');
+}
 
-        function deleteDO(id) {
-            if (confirm("Supprimer ce DO ?")) {
-                alert("Suppression DO ID " + id);
-            }
-        }
-    </script>
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('translate-x-0');
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+}
+
+// Fermer en cliquant en dehors
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const menuButton = document.querySelector('button[onclick="openSidebar()"]');
+    if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) {
+        closeSidebar();
+    }
+});
+let userToDeleteId = null;
+
+function showDeleteModal(userId, userFullName) {
+    userToDeleteId = userId;
+
+    document.getElementById('deleteMessage').innerHTML = 
+        `Êtes-vous sûr de vouloir supprimer <strong>${userFullName}</strong> ?<br>
+         <span class="text-sm text-gray-500">Cette action est irréversible.</span>`;
+
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    userToDeleteId = null;
+}
+
+function confirmDeleteAction() {
+    if (userToDeleteId !== null) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('gestion_donneurs_ordre') }}";
+        
+        const actionField = document.createElement('input');
+        actionField.type = 'hidden';
+        actionField.name = 'action';
+        actionField.value = 'delete';
+        
+        const idField = document.createElement('input');
+        idField.type = 'hidden';
+        idField.name = 'donneur_id';
+        idField.value = userToDeleteId;
+        
+        form.appendChild(actionField);
+        form.appendChild(idField);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+function validateDOForm() {
+    const email = document.getElementById('email').value.trim();
+    const nom = document.getElementById('nom').value.trim();
+    const adresse = document.getElementById('adresse').value.trim();
+    const telephone = document.getElementById('telephone').value.trim();
+
+    // Vérifier que tous les champs sont remplis
+    if (!nom || !adresse || !telephone || !email) {
+        alert("Tous les champs sont obligatoires !");
+        return false;
+    }
+
+    // Validation avancée de l'email
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|tn|org|fr|net|io|edu|gov|ma|dz|ly|eg|it|es|de|uk|us)$/i;
+
+    if (!emailRegex.test(email)) {
+        alert("Veuillez entrer une adresse email valide avec une extension correcte (ex: .com, .tn, .org, .fr...)");
+        document.getElementById('email').focus();
+        return false;
+    }
+
+    return true; // Si tout est OK, le formulaire est soumis
+}
+let currentCountryCode = '+216';
+
+function toggleCountryDropdown() {
+    const dropdown = document.getElementById('countryDropdown');
+    dropdown.classList.toggle('hidden');
+
+    const rect = document.getElementById('telephone').getBoundingClientRect();
+
+    dropdown.style.top = (rect.bottom + window.scrollY + 5) + "px";
+    dropdown.style.left = (rect.left + window.scrollX) + "px";
+    dropdown.style.width = rect.width + "px";
+}
+
+function selectCountry(code, flag) {
+    currentCountryCode = code;
+    document.getElementById('selectedCode').textContent = code;
+    document.getElementById('selectedFlag').textContent = flag;
+    document.getElementById('code_pays').value = code;
+
+    document.getElementById('countryDropdown').classList.add('hidden');
+}
+
+const countries = [
+    { name: "Tunisie", code: "+216", flag: "🇹🇳" },
+    { name: "France", code: "+33", flag: "🇫🇷" },
+    { name: "Algérie", code: "+213", flag: "🇩🇿" },
+    { name: "Maroc", code: "+212", flag: "🇲🇦" },
+    { name: "Égypte", code: "+20", flag: "🇪🇬" },
+    { name: "Arabie Saoudite", code: "+966", flag: "🇸🇦" },
+    { name: "Émirats Arabes Unis", code: "+971", flag: "🇦🇪" },
+    { name: "Qatar", code: "+974", flag: "🇶🇦" },
+    { name: "Koweït", code: "+965", flag: "🇰🇼" },
+    { name: "Bahreïn", code: "+973", flag: "🇧🇭" },
+    { name: "Oman", code: "+968", flag: "🇴🇲" },
+    { name: "États-Unis", code: "+1", flag: "🇺🇸" },
+    { name: "Canada", code: "+1", flag: "🇨🇦" },
+    { name: "Royaume-Uni", code: "+44", flag: "🇬🇧" },
+    { name: "Allemagne", code: "+49", flag: "🇩🇪" },
+    { name: "Italie", code: "+39", flag: "🇮🇹" },
+    { name: "Espagne", code: "+34", flag: "🇪🇸" },
+    { name: "Turquie", code: "+90", flag: "🇹🇷" },
+    { name: "Chine", code: "+86", flag: "🇨🇳" },
+    { name: "Japon", code: "+81", flag: "🇯🇵" },
+    { name: "Inde", code: "+91", flag: "🇮🇳" },
+    { name: "Brésil", code: "+55", flag: "🇧🇷" },
+    { name: "Mexique", code: "+52", flag: "🇲🇽" },
+    { name: "Afrique du Sud", code: "+27", flag: "🇿🇦" }
+];
+
+function loadCountries() {
+    const dropdown = document.getElementById('countryDropdown');
+    dropdown.innerHTML = '';
+
+    countries.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "flex items-center gap-4 px-4 py-3 hover:bg-orange-50 cursor-pointer rounded-xl";
+
+        item.innerHTML = `
+            <span class="text-2xl">${c.flag}</span>
+            <div class="flex-1">
+                <div class="font-medium">${c.name}</div>
+                <div class="text-orange-600 text-sm">${c.code}</div>
+            </div>
+        `;
+
+        item.onclick = () => selectCountry(c.code, c.flag);
+        dropdown.appendChild(item);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadCountries);
+
+// Fermer dropdown si clic ailleurs
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('countryDropdown');
+    const button = document.querySelector('[onclick="toggleCountryDropdown()"]');
+
+    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+</script>
 </body>
 </html>

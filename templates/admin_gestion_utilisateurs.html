@@ -5,206 +5,548 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Utilisateurs</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet">
     <style>
-        .dataTable-wrapper .dataTable-container { overflow-x: auto; }
-        .btn-edit { background-color: #3b82f6; color: white; }
-        .btn-delete { background-color: #ef4444; color: white; }
+        .success-msg { animation: fadeOut 5s forwards; }
+        @keyframes fadeOut { 0% {opacity:1} 70% {opacity:1} 100% {opacity:0} }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
 
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10">
-                <h1 class="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h1>
+<div class="max-w-screen-2xl mx-auto px-6 py-6">
+
+    <div class="flex items-center justify-between mb-8">
+        <!-- Bouton Menu Orange -->
+        <button onclick="openSidebar()" 
+                class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span>Menu</span>
+        </button>
+
+        <h1 class="text-3xl font-bold">Gestion des Utilisateurs</h1>
+
+        <div class="flex items-center gap-3">
+            <div class="relative w-80">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher utilisateur..." 
+                       class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
+                <div class="absolute left-4 top-3.5 text-gray-400 text-xl">🔍︎</div>
             </div>
-            <a href="{{ url_for('admin_dashboard') }}" 
-               class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-medium transition">
-                ← Retour au Dashboard
-            </a>
+
+            <button onclick="openModal()" 
+                    class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-8 py-3.5 rounded-2xl font-medium shadow-md transition">
+                <span class="text-2xl leading-none">+</span> 
+                Nouvel Utilisateur
+            </button>
+
+            <button onclick="toggleDarkMode()" 
+                    class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500">
+                <span id="theme-icon" class="text-2xl">🌙</span>
+            </button>
         </div>
-    </header>
+    </div>
 
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="success-msg mb-6 px-6 py-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-2xl">
+                    ✅ {{ msg }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-            <!-- Header -->
-            <div class="px-6 py-5 border-b flex justify-between items-center bg-orange-50">
-                <h2 class="text-lg font-semibold text-gray-800">Liste des Utilisateurs</h2>
-                <button onclick="openUserModal()" 
-                        class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 shadow transition">
-                    <span class="text-xl">+</span> Ajouter un utilisateur
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow overflow-hidden">
+        <table id="userTable" class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
+                <tr>
+                    <th class="px-8 py-5 text-left">ID</th>
+                    <th class="px-8 py-5 text-left">Nom</th>
+                    <th class="px-8 py-5 text-left">Prénom</th>
+                    <th class="px-8 py-5 text-left">Email</th>
+                    <th class="px-8 py-5 text-left">Téléphone</th>
+                    <th class="px-8 py-5 text-left">Rôle</th>
+                    <th class="px-8 py-5 text-left">DO</th>  <!-- ← NOUVEAU -->
+                    <th class="px-8 py-5 text-center w-36">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for u in utilisateurs %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-8 py-5">{{ u.id }}</td>
+                    <td class="px-8 py-5">{{ u.nom }}</td>
+                    <td class="px-8 py-5">{{ u.prenom }}</td>
+                    <td class="px-8 py-5">{{ u.email }}</td>
+                    <td class="px-8 py-5">{{ u.numtel }}</td>
+                    <td class="px-8 py-5">{{ u.role }}</td>
+                    <!-- ← NOUVEAU : affichage DO -->
+                    <td class="px-8 py-5">
+                        {% if u.do_id and u.do %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium bg-orange-100 text-orange-700">
+                                {{ u.do.nom }}
+                            </span>
+                        {% else %}
+                            <span class="text-gray-400 text-xs">— Aucun DO —</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="flex items-center justify-center gap-8">
+                            <!-- Modifier -->
+                            <button onclick="editUser(
+                                {{ u.id }},
+                                '{{ u.nom }}',
+                                '{{ u.prenom }}',
+                                '{{ u.email }}',
+                                '{{ u.numtel }}',
+                                '{{ u.role }}',
+                                {{ u.do_id if u.do_id else 'null' }}
+                            )">
+                                <img src="{{ url_for('static', filename='images/gear.png') }}" width="60" height="60" alt="Modifier">
+                            </button>
+
+                            <!-- Suppression -->
+                            <button onclick="showDeleteModal({{ u.id }}, '{{ u.nom }} {{ u.prenom }}')" 
+                                    class="hover:scale-110 transition">
+                                <img src="{{ url_for('static', filename='images/trash.png') }}" width="60" height="60" alt="Supprimer">
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
+    <div class="p-5 flex justify-between items-center border-b">
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
+            <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+        </div>
+        <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
+    </div>
+
+    <nav class="p-5 space-y-1">
+        <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
+        <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
+        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des DO</a>
+        <a href="{{ url_for('gestion_campagnes') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des campagnes</a>
+        <a href="{{ url_for('gestion_npv') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des NPV</a>
+        <a href="{{ url_for('gestion_operateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des opérateurs</a>
+        <a href="{{ url_for('historique') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Historique global des actions</a>
+    </nav>
+</aside>
+
+<!-- ===================== MODAL SUPPRESSION ===================== -->
+<div id="deleteModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="bg-orange-600 text-white px-8 py-6 text-center">
+            <div class="mx-auto w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                <img src="{{ url_for('static', filename='images/trash.png') }}" width="50" height="50" class="opacity-90">
+            </div>
+            <h3 class="text-2xl font-bold">Supprimer l'utilisateur ?</h3>
+        </div>
+
+        <div class="p-8 text-center">
+            <p id="deleteMessage" class="text-gray-700 dark:text-gray-300 text-lg mb-10"></p>
+
+            <div class="flex gap-4">
+                <button onclick="closeDeleteModal()" 
+                        class="flex-1 py-4 text-gray-700 font-medium border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    Non, annuler
+                </button>
+                <button onclick="confirmDeleteAction()" 
+                        class="flex-1 py-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl transition">
+                    Oui, supprimer
                 </button>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Tableau -->
-            <div class="p-6">
-                <table id="usersTable" class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-left">
-                            <th class="px-4 py-3">ID</th>
-                            <th class="px-4 py-3">Nom</th>
-                            <th class="px-4 py-3">Prénom</th>
-                            <th class="px-4 py-3">Email</th>
-                            <th class="px-4 py-3">Téléphone</th>
-                            <th class="px-4 py-3">Rôle</th>
-                            <th class="px-4 py-3 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for u in utilisateurs %}
-                        <tr class="hover:bg-orange-50 transition">
-                            <td class="px-4 py-3 text-gray-500">{{ u.id }}</td>
-                            <td class="px-4 py-3 font-medium">{{ u.nom }}</td>
-                            <td class="px-4 py-3">{{ u.prenom }}</td>
-                            <td class="px-4 py-3">{{ u.email }}</td>
-                            <td class="px-4 py-3">{{ u.numtel }}</td>
-                            <td class="px-4 py-3">
-                                <span class="px-3 py-1 text-xs font-medium rounded-full 
-                                    {% if u.role == 'admin' %}bg-purple-100 text-purple-700
-                                    {% elif u.role == 'responsable_plateau' %}bg-blue-100 text-blue-700
-                                    {% else %}bg-green-100 text-green-700{% endif %}">
-                                    {{ u.role }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 text-center space-x-2">
-                                <button onclick="editUser({{ u.id }}, '{{ u.nom }}', '{{ u.prenom }}', '{{ u.email }}', '{{ u.numtel }}', '{{ u.adresse }}', '{{ u.role }}')" 
-                                        class="btn-edit px-5 py-1.5 rounded-xl text-xs font-medium">Modifier</button>
-                                {% if u.id != current_user_id %}
-                                <button onclick="deleteUser({{ u.id }})" 
-                                        class="btn-delete px-5 py-1.5 rounded-xl text-xs font-medium">Supprimer</button>
-                                {% endif %}
-                            </td>
-                        </tr>
+<!-- ===================== MODAL UTILISATEUR ===================== -->
+<div id="userModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[95vh] overflow-hidden flex flex-col">
+        <div class="px-8 pt-8 pb-4 border-b">
+            <h2 id="modalTitle" class="text-2xl font-bold">Nouvel Utilisateur</h2>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-6">
+            <form method="POST" id="userForm" onsubmit="return validateUserForm()">
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" name="user_id" id="userId">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Nom <span class="text-red-500">*</span></label>
+                        <input type="text" name="nom" id="nom" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Prénom <span class="text-red-500">*</span></label>
+                        <input type="text" name="prenom" id="prenom" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email <span class="text-red-500">*</span></label>
+                    <input type="email" name="email" id="email" required placeholder="exemple@domaine.com"
+                           class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        Téléphone <span class="text-red-500">*</span>
+                    </label>
+
+                    <div class="relative">
+                        <!-- Bouton pays -->
+                        <button type="button" onclick="toggleCountryDropdown()"
+                            class="absolute left-0 top-0 bottom-0 px-4 flex items-center gap-2 bg-gray-100 border border-r-0 rounded-l-2xl z-10">
+                            <span id="selectedFlag" class="text-xl">🇹🇳</span>
+                            <span id="selectedCode" class="font-semibold text-sm">+216</span>
+                        </button>
+
+                        <input type="hidden" name="code_pays" id="code_pays" value="+216">
+
+                        <input type="tel"
+                               name="numtel"
+                               id="numtel"
+                               maxlength="11"
+                               placeholder="12345678"
+                               class="w-full pl-28 pr-5 py-3 border border-gray-300 rounded-2xl"
+                               required>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Maximum 11 chiffres</p>
+                </div>
+
+                <!-- Dropdown pays -->
+                <div id="countryDropdown" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/60">
+                    <div class="bg-white rounded-3xl w-full max-w-md max-h-[70vh] overflow-hidden">
+                        <div class="p-5 border-b flex justify-between">
+                            <h3 class="font-bold">Choisir le code pays</h3>
+                            <button onclick="toggleCountryDropdown()">✕</button>
+                        </div>
+                        <div id="countryList" class="overflow-y-auto max-h-[400px] p-3"></div>
+                    </div>
+                </div>
+
+                <!-- Mot de passe -->
+                <div class="relative">
+                    <label class="block text-sm font-medium mb-2">Mot de passe <span class="text-red-500">*</span></label>
+                    <input type="password" name="mot_de_passe" id="mot_de_passe" 
+                           class="w-full px-5 py-3 border border-gray-300 rounded-2xl pr-12">
+                    <button type="button" id="togglePasswordBtn"
+                            class="absolute right-4 top-10 text-gray-500 hover:text-gray-700 text-2xl">
+                        👁
+                    </button>
+                </div>
+
+                <!-- Rôle -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Rôle <span class="text-red-500">*</span></label>
+                    <select name="role" id="role" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                        <option value="admin">Administrateur</option>
+                        <option value="responsable_plateau">Responsable Plateau</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+
+                <!-- ← NOUVEAU : Champ DO -->
+                <div id="doField" class="hidden">
+                    <label class="block text-sm font-medium mb-2">Donneur d'Ordre <span class="text-red-500">*</span></label>
+                    <select name="do_id" id="do_id" class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
+                        <option value="">-- Sélectionner un DO --</option>
+                        {% for d in donneurs %}
+                        <option value="{{ d.id }}">{{ d.nom }}</option>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                    </select>
+                </div>
+
+        <div class="bg-gray-50 px-8 py-5 flex gap-3 border-t">
+            <button onclick="closeModal()" 
+                    class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100 transition">
+                Annuler
+            </button>
+            <button type="submit" form="userForm" id="submitBtn"
+                    class="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl">
+                Créer le compte
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- ===================== MODAL (Version Scrollable - Corrigée) ===================== -->
-    <div id="userModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden">
-            
-            <!-- Header -->
-            <div class="px-6 py-5 bg-orange-500 text-white flex justify-between items-center flex-shrink-0">
-                <h2 id="modalTitle" class="text-xl font-semibold">Ajouter un utilisateur</h2>
-                <button onclick="closeUserModal()" class="text-3xl leading-none hover:text-orange-200">×</button>
+<script>
+let passwordVisible = false;
+
+document.getElementById('togglePasswordBtn').addEventListener('click', function() {
+    const passwordField = document.getElementById('mot_de_passe');
+    passwordVisible = !passwordVisible;
+    if (passwordVisible) {
+        passwordField.type = 'text';
+        this.textContent = '🙈';
+    } else {
+        passwordField.type = 'password';
+        this.textContent = '👁';
+    }
+});
+
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    document.getElementById('theme-icon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+}
+// Afficher / Masquer le champ DO selon le rôle
+function toggleDoField() {
+    const role = document.getElementById('role').value;
+    const doField = document.getElementById('doField');
+
+    if (role === 'manager' || role === 'responsable_plateau') {
+        doField.classList.remove('hidden');
+        document.getElementById('do_id').required = true;
+    } else {
+        doField.classList.add('hidden');
+        document.getElementById('do_id').required = false;
+    }
+}
+
+function openModal() {
+    document.getElementById('userModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Nouvel Utilisateur';
+    document.getElementById('formAction').value = 'create';
+    document.getElementById('submitBtn').textContent = 'Créer le compte';
+    document.getElementById('userForm').reset();
+    document.getElementById('mot_de_passe').value = '';
+    document.getElementById('do_id').value = '';  // ← reset DO
+    toggleDoField();
+}
+
+// ← NOUVEAU : do_id ajouté en paramètre
+function editUser(id, nom, prenom, email, numtel, role, doId) {
+    document.getElementById('userModal').classList.remove('hidden');
+    
+    document.getElementById('modalTitle').textContent = 'Modifier Utilisateur';
+    document.getElementById('formAction').value = 'update';
+    document.getElementById('userId').value = id;
+    
+    document.getElementById('nom').value = nom;
+    document.getElementById('prenom').value = prenom;
+    document.getElementById('email').value = email;
+    document.getElementById('numtel').value = numtel;
+    document.getElementById('role').value = role;
+    // Gestion du champ DO en modification
+    const doField = document.getElementById('doField');
+    const doSelect = document.getElementById('do_id');
+
+    if (role === 'manager' || role === 'responsable_plateau') {
+        doField.classList.remove('hidden');
+        doSelect.required = true;
+        doSelect.value = (do_id && do_id !== 'null') ? do_id : '';
+    } else {
+        doField.classList.add('hidden');
+        doSelect.required = false;
+    }
+
+    // ← NOUVEAU : affecter le DO sélectionné
+    document.getElementById('do_id').value = doId !== null ? doId : '';
+
+    const passwordField = document.getElementById('mot_de_passe');
+    passwordField.value = ''; 
+    passwordField.placeholder = 'Entrez un nouveau mot de passe (laisser vide pour ne pas changer)';
+
+    passwordVisible = false;
+    document.getElementById('togglePasswordBtn').textContent = '👁';
+    passwordField.type = 'password';
+
+    document.getElementById('submitBtn').textContent = 'Modifier le compte';
+}
+
+function closeModal() {
+    document.getElementById('userModal').classList.add('hidden');
+}
+
+// === Sidebar ===
+function openSidebar() {
+    document.getElementById('sidebar').classList.remove('-translate-x-full');
+    document.getElementById('sidebar').classList.add('translate-x-0');
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('translate-x-0');
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+}
+
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const menuButton = document.querySelector('button[onclick="openSidebar()"]');
+    if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) {
+        closeSidebar();
+    }
+});
+
+// === Suppression ===
+let userToDeleteId = null;
+
+function showDeleteModal(userId, userFullName) {
+    userToDeleteId = userId;
+    document.getElementById('deleteMessage').innerHTML = 
+        `Êtes-vous sûr de vouloir supprimer <strong>${userFullName}</strong> ?<br><span class="text-sm text-gray-500">Cette action est irréversible.</span>`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    userToDeleteId = null;
+}
+
+function confirmDeleteAction() {
+    if (userToDeleteId !== null) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('gestion_utilisateurs') }}";
+        
+        const actionField = document.createElement('input');
+        actionField.type = 'hidden';
+        actionField.name = 'action';
+        actionField.value = 'delete';
+        
+        const idField = document.createElement('input');
+        idField.type = 'hidden';
+        idField.name = 'user_id';
+        idField.value = userToDeleteId;
+        
+        form.appendChild(actionField);
+        form.appendChild(idField);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// === Validation formulaire ===
+function validateUserForm() {
+    const action = document.getElementById('formAction').value;
+    const nom = document.getElementById('nom').value.trim();
+    const prenom = document.getElementById('prenom').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const numtel = document.getElementById('numtel').value.trim();
+    const mot_de_passe = document.getElementById('mot_de_passe').value.trim();
+
+    if (!nom || !prenom || !email || !numtel) {
+        alert("Tous les champs sauf mot de passe et DO sont obligatoires !");
+        return false;
+    }
+
+    if (action === 'create' && !mot_de_passe) {
+        alert("Mot de passe obligatoire lors de la création !");
+        return false;
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+        alert("Email invalide !");
+        return false;
+    }
+
+    return true;
+}
+
+// ===== Pays =====
+const countries = [
+    { name: "Tunisie", code: "+216", flag: "🇹🇳" },
+    { name: "Algérie", code: "+213", flag: "🇩🇿" },
+    { name: "Maroc", code: "+212", flag: "🇲🇦" },
+    { name: "Égypte", code: "+20", flag: "🇪🇬" },
+    { name: "Libye", code: "+218", flag: "🇱🇾" },
+    { name: "France", code: "+33", flag: "🇫🇷" },
+    { name: "Espagne", code: "+34", flag: "🇪🇸" },
+    { name: "Italie", code: "+39", flag: "🇮🇹" },
+    { name: "Allemagne", code: "+49", flag: "🇩🇪" },
+    { name: "Belgique", code: "+32", flag: "🇧🇪" },
+    { name: "Suisse", code: "+41", flag: "🇨🇭" },
+    { name: "Pays-Bas", code: "+31", flag: "🇳🇱" },
+    { name: "Portugal", code: "+351", flag: "🇵🇹" },
+    { name: "Royaume-Uni", code: "+44", flag: "🇬🇧" },
+    { name: "Irlande", code: "+353", flag: "🇮🇪" },
+    { name: "États-Unis", code: "+1", flag: "🇺🇸" },
+    { name: "Canada", code: "+1", flag: "🇨🇦" },
+    { name: "Mexique", code: "+52", flag: "🇲🇽" },
+    { name: "Brésil", code: "+55", flag: "🇧🇷" },
+    { name: "Argentine", code: "+54", flag: "🇦🇷" },
+    { name: "Arabie Saoudite", code: "+966", flag: "🇸🇦" },
+    { name: "Émirats Arabes Unis", code: "+971", flag: "🇦🇪" },
+    { name: "Qatar", code: "+974", flag: "🇶🇦" },
+    { name: "Koweït", code: "+965", flag: "🇰🇼" },
+    { name: "Bahreïn", code: "+973", flag: "🇧🇭" },
+    { name: "Oman", code: "+968", flag: "🇴🇲" },
+    { name: "Jordanie", code: "+962", flag: "🇯🇴" },
+    { name: "Liban", code: "+961", flag: "🇱🇧" },
+    { name: "Turquie", code: "+90", flag: "🇹🇷" },
+    { name: "Inde", code: "+91", flag: "🇮🇳" },
+    { name: "Chine", code: "+86", flag: "🇨🇳" },
+    { name: "Japon", code: "+81", flag: "🇯🇵" },
+    { name: "Corée du Sud", code: "+82", flag: "🇰🇷" },
+    { name: "Indonésie", code: "+62", flag: "🇮🇩" },
+    { name: "Pakistan", code: "+92", flag: "🇵🇰" },
+    { name: "Afrique du Sud", code: "+27", flag: "🇿🇦" },
+    { name: "Nigéria", code: "+234", flag: "🇳🇬" },
+    { name: "Sénégal", code: "+221", flag: "🇸🇳" },
+    { name: "Côte d'Ivoire", code: "+225", flag: "🇨🇮" },
+    { name: "Cameroun", code: "+237", flag: "🇨🇲" },
+    { name: "Australie", code: "+61", flag: "🇦🇺" },
+    { name: "Nouvelle-Zélande", code: "+64", flag: "🇳🇿" }
+];
+
+function toggleCountryDropdown() {
+    document.getElementById('countryDropdown').classList.toggle('hidden');
+}
+
+function selectCountry(code, flag) {
+    document.getElementById('selectedCode').textContent = code;
+    document.getElementById('selectedFlag').textContent = flag;
+    document.getElementById('code_pays').value = code;
+    toggleCountryDropdown();
+}
+
+function loadCountries() {
+    const list = document.getElementById('countryList');
+    list.innerHTML = '';
+    countries.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "flex items-center gap-3 p-3 hover:bg-gray-100 rounded cursor-pointer";
+        item.innerHTML = `
+            <span class="text-2xl">${c.flag}</span>
+            <div class="flex-1">
+                <div>${c.name}</div>
+                <div class="text-orange-600 font-bold">${c.code}</div>
             </div>
+        `;
+        item.onclick = () => selectCountry(c.code, c.flag);
+        list.appendChild(item);
+    });
+}
 
-            <!-- Formulaire avec Scroll -->
-            <div class="p-6 overflow-y-auto flex-1">
-                <form method="POST" id="userForm" class="space-y-5">
-                    <input type="hidden" name="action" id="formAction" value="create">
-                    <input type="hidden" name="user_id" id="userId">
+// ===== Recherche tableau =====
+function searchTable() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#userTable tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+    });
+}
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                            <input type="text" name="nom" id="nom" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                            <input type="text" name="prenom" id="prenom" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" name="email" id="email" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                        <input type="text" name="numtel" id="numtel" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                        <input type="text" name="adresse" id="adresse" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                        <input type="password" name="mot_de_passe" id="mot_de_passe" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500"
-                               placeholder="Laisser vide pour ne pas modifier">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
-                        <select name="role" id="role" required class="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:border-orange-500">
-                            <option value="admin">Administrateur</option>
-                            <option value="responsable_plateau">Responsable Plateau</option>
-                            <option value="manager">Manager</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Boutons fixes en bas -->
-            <div class="px-6 py-5 border-t bg-gray-50 flex gap-3 flex-shrink-0">
-                <button onclick="closeUserModal()" 
-                        class="flex-1 py-3 text-gray-700 font-medium border border-gray-300 rounded-2xl hover:bg-gray-100 transition">
-                    Annuler
-                </button>
-                <button onclick="document.getElementById('userForm').submit()" 
-                        class="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-2xl transition">
-                    Enregistrer
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Initialisation du tableau moderne
-        document.addEventListener("DOMContentLoaded", function() {
-            new simpleDatatables.DataTable("#usersTable", {
-                perPage: 10,
-                perPageSelect: [5, 10, 20, 50],
-                searchable: true,
-                sortable: true,
-                labels: {
-                    placeholder: "Rechercher...",
-                    perPage: "entrées par page",
-                    noRows: "Aucun utilisateur trouvé",
-                    info: "Affichage de {start} à {end} sur {rows} entrées"
-                }
-            });
-        });
-
-        function openUserModal() {
-            document.getElementById('userModal').classList.remove('hidden');
-            document.getElementById('modalTitle').textContent = "Ajouter un utilisateur";
-            document.getElementById('formAction').value = "create";
-            document.getElementById('userForm').reset();
-        }
-
-        function editUser(id, nom, prenom, email, numtel, adresse, role) {
-            document.getElementById('userModal').classList.remove('hidden');
-            document.getElementById('modalTitle').textContent = "Modifier l'utilisateur";
-            document.getElementById('formAction').value = "update";
-            document.getElementById('userId').value = id;
-            
-            document.getElementById('nom').value = nom;
-            document.getElementById('prenom').value = prenom;
-            document.getElementById('email').value = email;
-            document.getElementById('numtel').value = numtel;
-            document.getElementById('adresse').value = adresse;
-            document.getElementById('role').value = role;
-        }
-
-        function closeUserModal() {
-            document.getElementById('userModal').classList.add('hidden');
-        }
-
-        // Fermer en cliquant en dehors
-        document.getElementById('userModal').addEventListener('click', function(e) {
-            if (e.target === this) closeUserModal();
-        });
-    </script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCountries();
+    const input = document.getElementById('numtel');
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+    });
+});
+function submitForm() {
+    const form = document.getElementById('userForm');
+    if (form) {
+        form.submit();
+    }
+}
+</script>
 </body>
 </html>

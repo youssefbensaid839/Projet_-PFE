@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Expirée</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316',
+                        primaryDark: '#c2410c'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-auto text-center px-6">
+        <div class="mb-8">
+            <div class="mx-auto w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center">
+                <span class="text-6xl">⏰</span>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">Session expirée</h1>
+        <p class="text-gray-600 mb-10 text-lg">
+            Votre session a expiré pour des raisons de sécurité.<br>
+            Veuillez vous reconnecter.
+        </p>
+
+        <!-- Bouton corrigé -->
+        <button onclick="goToLogin()" 
+                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-4 rounded-2xl text-lg shadow-lg transition flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4V4" />
+            </svg>
+            Se reconnecter maintenant
+        </button>
+
+        <p class="text-sm text-gray-500 mt-8">
+            Vous allez être redirigé automatiquement dans <span id="countdown">8</span> secondes...
+        </p>
+    </div>
+
+    <script>
+        function goToLogin() {
+            window.location.href = "{{ url_for('login') }}";
+        }
+
+        // Redirection automatique après 8 secondes
+        let secondsLeft = 8;
+        const countdownEl = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            secondsLeft--;
+            countdownEl.textContent = secondsLeft;
+
+            if (secondsLeft <= 0) {
+                clearInterval(timer);
+                window.location.href = "{{ url_for('login') }}";
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

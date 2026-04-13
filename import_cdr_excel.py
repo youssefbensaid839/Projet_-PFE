@@ -1,8 +1,5 @@
 import pandas as pd
 from sqlalchemy import create_engine
-import warnings
-
-warnings.filterwarnings('ignore')
 
 excel_path = r"C:\Users\youss\Desktop\CDR.xlsx"
 sheet_name = "Calls_Mezzo_2026-01-14_2026-01-"
@@ -24,7 +21,7 @@ df = pd.read_excel(excel_path, sheet_name=sheet_name, engine='openpyxl')
 print(f"Lignes lues : {len(df)}")
 print("Colonnes :", df.columns.tolist())
 
-# Conversion des nombres (virgule → point, espaces supprimés)
+# Conversion des colonnes numériques seulement
 numeric_cols = [
     'Prix', "Coût de l'appel", 'tarif AMD', 'Surcharge CRM', 'Surcharge',
     'Recording fee', 'Coût HLM ', 'Prix STT', 'Coût STT', 'Coût de la réduction du bruit',
