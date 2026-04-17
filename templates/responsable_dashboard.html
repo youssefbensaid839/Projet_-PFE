@@ -19,29 +19,31 @@
     </script>
 </head>
 <body class="h-full flex flex-col">
-    <!-- Header avec logo bien visible -->
+ 
+    <!-- Header -->
     <header class="bg-white shadow z-40 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center">
             <div class="flex items-center">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo Entreprise" class="h-12 mr-4">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-12 mr-4">
                 <h1 class="text-2xl font-bold text-gray-900">Dashboard Responsable Plateau</h1>
             </div>
-            <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 font-medium text-lg">Déconnexion</a>
+            <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 font-medium text-lg">
+                Déconnexion
+            </a>
         </div>
     </header>
-
-    <!-- Bouton "Menu" un peu plus bas pour éviter de masquer le logo -->
-    <button onclick="openSidebar()" 
+ 
+    <!-- Bouton Menu -->
+    <button onclick="openSidebar()"
             class="fixed top-20 left-6 z-50 flex items-center bg-primary text-white px-6 py-3.5 rounded-full shadow-lg hover:bg-primaryDark transition space-x-3">
         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
         <span class="font-medium">Menu</span>
     </button>
-
-    <!-- Sidebar qui s'ouvre au clic -->
+ 
+    <!-- Sidebar -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
-        <!-- En-tête sidebar -->
         <div class="p-5 flex justify-between items-center border-b">
             <div class="flex items-center">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
@@ -53,48 +55,95 @@
                 </svg>
             </button>
         </div>
-
-        <!-- Les 5 choix (non cliquables) -->
         <nav class="mt-6 px-5 space-y-3">
-            <a href="{{ url_for('responsable_creation_comptes') }}" class="block px-4 py-3 text-gray-700 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">
-    Création des comptes
-</a>
-            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
+            <a href="{{ url_for('responsable_creation_comptes') }}"
+               class="block px-4 py-3 text-gray-700 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">
+                Création des comptes
+            </a>
+            <div class="block px-5 py-4 text-gray-400 font-medium rounded-lg cursor-not-allowed text-sm">
                 Affecter les utilisateurs aux DO
             </div>
-            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
-                Planifier la diffusion des emails contenant les factures
+            <div class="block px-5 py-4 text-gray-400 font-medium rounded-lg cursor-not-allowed text-sm">
+                Planifier la diffusion des emails
             </div>
-            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
-                Consulter les tableaux de bord relatifs aux DO qu’il gère
+            <div class="block px-5 py-4 text-gray-400 font-medium rounded-lg cursor-not-allowed text-sm">
+                Consulter les tableaux de bord
             </div>
-            <div class="block px-5 py-4 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition cursor-not-allowed">
-                Suivre l’historique des envois de factures
+            <div class="block px-5 py-4 text-gray-400 font-medium rounded-lg cursor-not-allowed text-sm">
+                Suivre l'historique des envois
             </div>
         </nav>
     </aside>
-
-    <!-- Overlay sombre -->
-    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300" onclick="closeSidebar()"></div>
-
-    <!-- Dashboard vide -->
-    <main class="flex-grow p-10 pt-24"> <!-- pt-24 pour descendre un peu à cause du bouton Menu -->
-        <div class="bg-white shadow rounded-xl p-10 text-center">
-            <h1 class="text-3xl font-bold text-gray-900 mb-6">Bienvenue dans votre espace Responsable Plateau</h1>
-            <p class="text-xl text-gray-600">
-                Cliquez sur le bouton "Menu" en haut à gauche pour voir vos options.<br>
-                Cette zone est vide pour le moment.
+ 
+    <!-- Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"
+         onclick="closeSidebar()"></div>
+ 
+    <!-- Contenu principal -->
+    <main class="flex-grow p-10 pt-24">
+        <div class="max-w-7xl mx-auto">
+ 
+            <!-- Titre de bienvenue + infos DO -->
+            <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">
+                        Bienvenue, {{ user.prenom }} {{ user.nom }}
+                    </h2>
+                    <p class="text-lg text-gray-600 mt-1">
+                        Donneur d'Ordre affecté :
+                        <span class="inline-flex items-center px-3 py-1 rounded-xl text-sm font-semibold bg-orange-100 text-orange-700 ml-1">
+                            {{ do.nom }}
+                        </span>
+                    </p>
+                </div>
+ 
+                <!-- Campagnes associées au DO -->
+                {% if campagnes %}
+                <div class="bg-white rounded-2xl shadow px-6 py-4 min-w-[260px]">
+                    <p class="text-sm font-semibold text-gray-500 mb-2">
+                        Campagnes de ce DO ({{ campagnes|length }})
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for c in campagnes %}
+                        <span class="px-3 py-1 rounded-xl text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+                            {{ c.nom }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                
+                {% endif %}
+            </div>
+ 
+            <!-- Power BI filtré sur DO + campagnes -->
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+                <iframe 
+    title="Power BI - {{ do.nom }}"
+    width="100%" 
+    height="850" 
+    src="{{ powerbi_url }}"
+    frameborder="0" 
+    allowFullScreen="true"
+    style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+</iframe>
+            </div>
+ 
+            <!-- Message si aucune campagne → le rapport sera vide -->
+            {% if not campagnes %}
+            <p class="text-center text-gray-400 text-sm mt-4">
+                Le tableau de bord ne contient pas de données car aucune campagne n'est encore associée à votre DO.
             </p>
+            {% endif %}
+ 
         </div>
     </main>
-
-    <!-- JavaScript -->
+ 
     <script>
         function openSidebar() {
             document.getElementById('sidebar').classList.remove('-translate-x-full');
             document.getElementById('overlay').classList.remove('hidden');
         }
-
         function closeSidebar() {
             document.getElementById('sidebar').classList.add('-translate-x-full');
             document.getElementById('overlay').classList.add('hidden');

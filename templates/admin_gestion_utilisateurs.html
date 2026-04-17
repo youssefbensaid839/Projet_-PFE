@@ -16,7 +16,6 @@
 <div class="max-w-screen-2xl mx-auto px-6 py-6">
 
     <div class="flex items-center justify-between mb-8">
-        <!-- Bouton Menu Orange -->
         <button onclick="openSidebar()" 
                 class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -25,20 +24,25 @@
             <span>Menu</span>
         </button>
 
-        <h1 class="text-3xl font-bold">Gestion des Utilisateurs</h1>
+        <!-- Titre -->
+<h1 class="text-3xl font-bold mb-4">
+    Gestion des Utilisateurs
+</h1>
 
-        <div class="flex items-center gap-3">
-            <div class="relative w-80">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher utilisateur..." 
-                       class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
-                <div class="absolute left-4 top-3.5 text-gray-400 text-xl">🔍︎</div>
-            </div>
+<!-- Barre + bouton en dessous -->
+<div class="flex items-center gap-3 mt-32">
+    <div class="relative w-80">
+        <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher utilisateur..." 
+               class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
+        <div class="absolute left-4 top-3.5 text-gray-400 text-xl">🔍︎</div>
+    </div>
 
-            <button onclick="openModal()" 
-                    class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-8 py-3.5 rounded-2xl font-medium shadow-md transition">
-                <span class="text-2xl leading-none">+</span> 
-                Nouvel Utilisateur
-            </button>
+    <button onclick="openModal()" 
+            class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-8 py-3.5 rounded-2xl font-medium shadow-md transition">
+        <span class="text-2xl leading-none">+</span> 
+        Nouvel Utilisateur
+    </button>
+</div>
 
             <button onclick="toggleDarkMode()" 
                     class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500">
@@ -67,7 +71,7 @@
                     <th class="px-8 py-5 text-left">Email</th>
                     <th class="px-8 py-5 text-left">Téléphone</th>
                     <th class="px-8 py-5 text-left">Rôle</th>
-                    <th class="px-8 py-5 text-left">DO</th>  <!-- ← NOUVEAU -->
+                    <th class="px-8 py-5 text-left">DO</th>
                     <th class="px-8 py-5 text-center w-36">Actions</th>
                 </tr>
             </thead>
@@ -80,19 +84,20 @@
                     <td class="px-8 py-5">{{ u.email }}</td>
                     <td class="px-8 py-5">{{ u.numtel }}</td>
                     <td class="px-8 py-5">{{ u.role }}</td>
-                    <!-- ← NOUVEAU : affichage DO -->
+
+                    <!-- ✅ Correction : on utilise donneurs_dict[u.do_id] au lieu de u.do.nom -->
                     <td class="px-8 py-5">
-                        {% if u.do_id and u.do %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium bg-orange-100 text-orange-700">
-                                {{ u.do.nom }}
+                        {% if u.do_id and u.do_id in donneurs_dict %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                                {{ donneurs_dict[u.do_id].nom }}
                             </span>
                         {% else %}
-                            <span class="text-gray-400 text-xs">— Aucun DO —</span>
+                            <span class="text-gray-400 text-xs">—</span>
                         {% endif %}
                     </td>
+
                     <td class="px-8 py-5">
                         <div class="flex items-center justify-center gap-8">
-                            <!-- Modifier -->
                             <button onclick="editUser(
                                 {{ u.id }},
                                 '{{ u.nom }}',
@@ -105,7 +110,6 @@
                                 <img src="{{ url_for('static', filename='images/gear.png') }}" width="60" height="60" alt="Modifier">
                             </button>
 
-                            <!-- Suppression -->
                             <button onclick="showDeleteModal({{ u.id }}, '{{ u.nom }} {{ u.prenom }}')" 
                                     class="hover:scale-110 transition">
                                 <img src="{{ url_for('static', filename='images/trash.png') }}" width="60" height="60" alt="Supprimer">
@@ -128,7 +132,6 @@
         </div>
         <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
     </div>
-
     <nav class="p-5 space-y-1">
         <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
         <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
@@ -149,10 +152,8 @@
             </div>
             <h3 class="text-2xl font-bold">Supprimer l'utilisateur ?</h3>
         </div>
-
         <div class="p-8 text-center">
             <p id="deleteMessage" class="text-gray-700 dark:text-gray-300 text-lg mb-10"></p>
-
             <div class="flex gap-4">
                 <button onclick="closeDeleteModal()" 
                         class="flex-1 py-4 text-gray-700 font-medium border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
@@ -197,27 +198,16 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-2">
-                        Téléphone <span class="text-red-500">*</span>
-                    </label>
-
+                    <label class="block text-sm font-medium mb-2">Téléphone <span class="text-red-500">*</span></label>
                     <div class="relative">
-                        <!-- Bouton pays -->
                         <button type="button" onclick="toggleCountryDropdown()"
                             class="absolute left-0 top-0 bottom-0 px-4 flex items-center gap-2 bg-gray-100 border border-r-0 rounded-l-2xl z-10">
                             <span id="selectedFlag" class="text-xl">🇹🇳</span>
                             <span id="selectedCode" class="font-semibold text-sm">+216</span>
                         </button>
-
                         <input type="hidden" name="code_pays" id="code_pays" value="+216">
-
-                        <input type="tel"
-                               name="numtel"
-                               id="numtel"
-                               maxlength="11"
-                               placeholder="12345678"
-                               class="w-full pl-28 pr-5 py-3 border border-gray-300 rounded-2xl"
-                               required>
+                        <input type="tel" name="numtel" id="numtel" maxlength="11" placeholder="12345678"
+                               class="w-full pl-28 pr-5 py-3 border border-gray-300 rounded-2xl" required>
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Maximum 11 chiffres</p>
                 </div>
@@ -239,37 +229,41 @@
                     <input type="password" name="mot_de_passe" id="mot_de_passe" 
                            class="w-full px-5 py-3 border border-gray-300 rounded-2xl pr-12">
                     <button type="button" id="togglePasswordBtn"
-                            class="absolute right-4 top-10 text-gray-500 hover:text-gray-700 text-2xl">
-                        👁
-                    </button>
+                            class="absolute right-4 top-10 text-gray-500 hover:text-gray-700 text-2xl">👁</button>
                 </div>
 
                 <!-- Rôle -->
                 <div>
                     <label class="block text-sm font-medium mb-2">Rôle <span class="text-red-500">*</span></label>
-                    <select name="role" id="role" required class="w-full px-5 py-3 border border-gray-300 rounded-2xl">
+                    <select name="role" id="role" required
+                            onchange="toggleDoField()"
+                            class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600">
                         <option value="admin">Administrateur</option>
                         <option value="responsable_plateau">Responsable Plateau</option>
                         <option value="manager">Manager</option>
                     </select>
                 </div>
 
-                <!-- ← NOUVEAU : Champ DO -->
-                <div id="doField" class="hidden">
-                    <label class="block text-sm font-medium mb-2">Donneur d'Ordre <span class="text-red-500">*</span></label>
-                    <select name="do_id" id="do_id" class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
-                        <option value="">-- Sélectionner un DO --</option>
+                <!-- ✅ Champ DO — peuplé avec "donneurs" (nom correct de la variable) -->
+                <div id="doFieldWrapper" class="hidden">
+                    <label class="block text-sm font-medium mb-2">
+                        Donneur d'Ordre (DO) <span class="text-red-500">*</span>
+                    </label>
+                    <select name="do_id" id="do_id"
+                            class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600">
+                        <option value="">— Sélectionner un DO —</option>
                         {% for d in donneurs %}
-                        <option value="{{ d.id }}">{{ d.nom }}</option>
+                            <option value="{{ d.id }}">{{ d.nom }}</option>
                         {% endfor %}
                     </select>
+                    <p class="text-xs text-gray-500 mt-1">Obligatoire pour ce rôle</p>
                 </div>
 
+            </form>
+        </div>
+
         <div class="bg-gray-50 px-8 py-5 flex gap-3 border-t">
-            <button onclick="closeModal()" 
-                    class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100 transition">
-                Annuler
-            </button>
+            <button onclick="closeModal()" class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100">Annuler</button>
             <button type="submit" form="userForm" id="submitBtn"
                     class="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl">
                 Créer le compte
@@ -279,36 +273,31 @@
 </div>
 
 <script>
-let passwordVisible = false;
+const ROLES_AVEC_DO = ['manager', 'responsable_plateau'];
 
+function toggleDoField() {
+    const role = document.getElementById('role').value;
+    const wrapper = document.getElementById('doFieldWrapper');
+    const doSelect = document.getElementById('do_id');
+    if (ROLES_AVEC_DO.includes(role)) {
+        wrapper.classList.remove('hidden');
+    } else {
+        wrapper.classList.add('hidden');
+        doSelect.value = '';
+    }
+}
+
+let passwordVisible = false;
 document.getElementById('togglePasswordBtn').addEventListener('click', function() {
     const passwordField = document.getElementById('mot_de_passe');
     passwordVisible = !passwordVisible;
-    if (passwordVisible) {
-        passwordField.type = 'text';
-        this.textContent = '🙈';
-    } else {
-        passwordField.type = 'password';
-        this.textContent = '👁';
-    }
+    passwordField.type = passwordVisible ? 'text' : 'password';
+    this.textContent = passwordVisible ? '🙈' : '👁';
 });
 
 function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
     document.getElementById('theme-icon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
-}
-// Afficher / Masquer le champ DO selon le rôle
-function toggleDoField() {
-    const role = document.getElementById('role').value;
-    const doField = document.getElementById('doField');
-
-    if (role === 'manager' || role === 'responsable_plateau') {
-        doField.classList.remove('hidden');
-        document.getElementById('do_id').required = true;
-    } else {
-        doField.classList.add('hidden');
-        document.getElementById('do_id').required = false;
-    }
 }
 
 function openModal() {
@@ -318,47 +307,30 @@ function openModal() {
     document.getElementById('submitBtn').textContent = 'Créer le compte';
     document.getElementById('userForm').reset();
     document.getElementById('mot_de_passe').value = '';
-    document.getElementById('do_id').value = '';  // ← reset DO
+    document.getElementById('do_id').value = '';
     toggleDoField();
 }
 
-// ← NOUVEAU : do_id ajouté en paramètre
 function editUser(id, nom, prenom, email, numtel, role, doId) {
     document.getElementById('userModal').classList.remove('hidden');
-    
     document.getElementById('modalTitle').textContent = 'Modifier Utilisateur';
     document.getElementById('formAction').value = 'update';
     document.getElementById('userId').value = id;
-    
     document.getElementById('nom').value = nom;
     document.getElementById('prenom').value = prenom;
     document.getElementById('email').value = email;
     document.getElementById('numtel').value = numtel;
     document.getElementById('role').value = role;
-    // Gestion du champ DO en modification
-    const doField = document.getElementById('doField');
-    const doSelect = document.getElementById('do_id');
 
-    if (role === 'manager' || role === 'responsable_plateau') {
-        doField.classList.remove('hidden');
-        doSelect.required = true;
-        doSelect.value = (do_id && do_id !== 'null') ? do_id : '';
-    } else {
-        doField.classList.add('hidden');
-        doSelect.required = false;
-    }
-
-    // ← NOUVEAU : affecter le DO sélectionné
+    toggleDoField(); // affiche/cache le champ DO selon le rôle
     document.getElementById('do_id').value = doId !== null ? doId : '';
 
     const passwordField = document.getElementById('mot_de_passe');
-    passwordField.value = ''; 
-    passwordField.placeholder = 'Entrez un nouveau mot de passe (laisser vide pour ne pas changer)';
-
+    passwordField.value = '';
+    passwordField.placeholder = 'Laisser vide pour ne pas changer';
     passwordVisible = false;
     document.getElementById('togglePasswordBtn').textContent = '👁';
     passwordField.type = 'password';
-
     document.getElementById('submitBtn').textContent = 'Modifier le compte';
 }
 
@@ -366,17 +338,14 @@ function closeModal() {
     document.getElementById('userModal').classList.add('hidden');
 }
 
-// === Sidebar ===
 function openSidebar() {
     document.getElementById('sidebar').classList.remove('-translate-x-full');
     document.getElementById('sidebar').classList.add('translate-x-0');
 }
-
 function closeSidebar() {
     document.getElementById('sidebar').classList.remove('translate-x-0');
     document.getElementById('sidebar').classList.add('-translate-x-full');
 }
-
 document.addEventListener('click', function(event) {
     const sidebar = document.getElementById('sidebar');
     const menuButton = document.querySelector('button[onclick="openSidebar()"]');
@@ -385,37 +354,26 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// === Suppression ===
 let userToDeleteId = null;
-
 function showDeleteModal(userId, userFullName) {
     userToDeleteId = userId;
     document.getElementById('deleteMessage').innerHTML = 
         `Êtes-vous sûr de vouloir supprimer <strong>${userFullName}</strong> ?<br><span class="text-sm text-gray-500">Cette action est irréversible.</span>`;
     document.getElementById('deleteModal').classList.remove('hidden');
 }
-
 function closeDeleteModal() {
     document.getElementById('deleteModal').classList.add('hidden');
     userToDeleteId = null;
 }
-
 function confirmDeleteAction() {
     if (userToDeleteId !== null) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = "{{ url_for('gestion_utilisateurs') }}";
-        
         const actionField = document.createElement('input');
-        actionField.type = 'hidden';
-        actionField.name = 'action';
-        actionField.value = 'delete';
-        
+        actionField.type = 'hidden'; actionField.name = 'action'; actionField.value = 'delete';
         const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'user_id';
-        idField.value = userToDeleteId;
-        
+        idField.type = 'hidden'; idField.name = 'user_id'; idField.value = userToDeleteId;
         form.appendChild(actionField);
         form.appendChild(idField);
         document.body.appendChild(form);
@@ -423,7 +381,6 @@ function confirmDeleteAction() {
     }
 }
 
-// === Validation formulaire ===
 function validateUserForm() {
     const action = document.getElementById('formAction').value;
     const nom = document.getElementById('nom').value.trim();
@@ -431,26 +388,37 @@ function validateUserForm() {
     const email = document.getElementById('email').value.trim();
     const numtel = document.getElementById('numtel').value.trim();
     const mot_de_passe = document.getElementById('mot_de_passe').value.trim();
+    const role = document.getElementById('role').value;
+    const do_id = document.getElementById('do_id').value;
 
     if (!nom || !prenom || !email || !numtel) {
-        alert("Tous les champs sauf mot de passe et DO sont obligatoires !");
+        alert("Tous les champs obligatoires doivent être remplis !");
         return false;
     }
-
     if (action === 'create' && !mot_de_passe) {
         alert("Mot de passe obligatoire lors de la création !");
         return false;
     }
-
     if (!email.includes('@') || !email.includes('.')) {
         alert("Email invalide !");
         return false;
     }
-
+    // Validation DO côté client aussi
+    if (ROLES_AVEC_DO.includes(role) && !do_id) {
+        alert("Vous devez sélectionner un Donneur d'Ordre pour ce rôle !");
+        return false;
+    }
     return true;
 }
 
-// ===== Pays =====
+function searchTable() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#userTable tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
+    });
+}
+
 const countries = [
     { name: "Tunisie", code: "+216", flag: "🇹🇳" },
     { name: "Algérie", code: "+213", flag: "🇩🇿" },
@@ -499,54 +467,32 @@ const countries = [
 function toggleCountryDropdown() {
     document.getElementById('countryDropdown').classList.toggle('hidden');
 }
-
 function selectCountry(code, flag) {
     document.getElementById('selectedCode').textContent = code;
     document.getElementById('selectedFlag').textContent = flag;
     document.getElementById('code_pays').value = code;
     toggleCountryDropdown();
 }
-
 function loadCountries() {
     const list = document.getElementById('countryList');
     list.innerHTML = '';
     countries.forEach(c => {
         const item = document.createElement('div');
         item.className = "flex items-center gap-3 p-3 hover:bg-gray-100 rounded cursor-pointer";
-        item.innerHTML = `
-            <span class="text-2xl">${c.flag}</span>
-            <div class="flex-1">
-                <div>${c.name}</div>
-                <div class="text-orange-600 font-bold">${c.code}</div>
-            </div>
-        `;
+        item.innerHTML = `<span class="text-2xl">${c.flag}</span><div class="flex-1"><div>${c.name}</div><div class="text-orange-600 font-bold">${c.code}</div></div>`;
         item.onclick = () => selectCountry(c.code, c.flag);
         list.appendChild(item);
     });
 }
 
-// ===== Recherche tableau =====
-function searchTable() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#userTable tbody tr');
-    rows.forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
-    });
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     loadCountries();
+    toggleDoField();
     const input = document.getElementById('numtel');
     input.addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
     });
 });
-function submitForm() {
-    const form = document.getElementById('userForm');
-    if (form) {
-        form.submit();
-    }
-}
 </script>
 </body>
 </html>

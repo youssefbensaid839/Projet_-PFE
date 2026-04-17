@@ -14,6 +14,50 @@ import os
 import sib_api_v3_sdk
 from sib_api_v3_sdk import Configuration, ApiClient, TransactionalEmailsApi, SendSmtpEmail
 from sib_api_v3_sdk.rest import ApiException
+from urllib.parse import quote  # à ajouter en haut de votre fichier si pas déjà présent
+ 
+# =====================================================================
+# CONSTANTE : URL de base Power BI (identique pour tous les dashboards)
+# =====================================================================
+POWERBI_BASE = (
+    "https://app.powerbi.com/reportEmbed?reportId=49c058b3-614b-48ec-a925-aa7b067a00a8&autoAuth=true&ctid=604f1a96-cbe8-43f8-abbf-f8eaf5d85730"
+)
+ 
+ 
+def build_powerbi_url(do_id, do_nom, campagnes):
+    """
+    Construit l'URL Power BI avec filtres sur le DO et les campagnes associées.
+ 
+    Power BI URL filtering syntax :
+      - Filtre simple  : &filter=Table/Colonne eq 'valeur'
+      - Filtre multiple (OR) : &filter=Table/Colonne eq 'v1' or Table/Colonne eq 'v2'
+ 
+    ⚠️  Les noms de tables/colonnes doivent correspondre EXACTEMENT
+        à ce qui est dans votre dataset Power BI.
+        Ajustez 'DonneurdOrdre', 'Campagne', 'nom' si nécessaire.
+    """
+ 
+    filtres = []
+ 
+    # --- Filtre 1 : restreindre au DO de l'utilisateur (par nom, plus fiable que l'id) ---
+    do_nom_encode = do_nom.replace("'", "''")   # échapper les apostrophes
+    filtres.append(f"DonneurdOrdre/nom eq '{do_nom_encode}'")
+ 
+    # --- Filtre 2 : restreindre aux campagnes de ce DO ---
+    if campagnes:
+        campagne_conditions = " or ".join(
+            f"Campagne/nom eq '{c.nom.replace(chr(39), chr(39)*2)}'"
+            for c in campagnes
+        )
+        filtres.append(f"({campagne_conditions})")
+ 
+    # Combiner les filtres avec AND
+    filtre_complet = " and ".join(filtres)
+ 
+    # Power BI attend le filtre encodé dans l'URL
+    url = POWERBI_BASE + "&filter=" + quote(filtre_complet, safe="()/'= ")
+ 
+    return url
 
 
 configuration = sib_api_v3_sdk.Configuration()
@@ -298,7 +342,7 @@ def gestion_utilisateurs():
 
             do_nom = ""
             if do_id:
-                do_obj = DonneurdOrdre.query.get(do_id)   # ← Correction ici
+                do_obj = DonneurdOrdre.query.get(do_id)
                 do_nom = f" | DO: {do_obj.nom}" if do_obj else ""
 
             log_action(
@@ -362,7 +406,6 @@ def gestion_utilisateurs():
                 new_value=new_value
             )
             db.session.commit()
-
             flash('Utilisateur modifié avec succès !', 'success')
 
         # ===================== DELETE =====================
@@ -399,31 +442,80 @@ def gestion_utilisateurs():
     utilisateurs = Utilisateur.query.all()
     donneurs = DonneurdOrdre.query.all()
 
-    return render_template('admin_gestion_utilisateurs.html', 
-                           utilisateurs=utilisateurs, 
-                           donneurs=donneurs)
+    # Construire un dictionnaire do_id → objet DonneurdOrdre pour accès rapide dans le template
+    donneurs_dict = {d.id: d for d in donneurs}
+
+    return render_template('admin_gestion_utilisateurs.html',
+                           utilisateurs=utilisateurs,
+                           donneurs=donneurs,           # pour le <select> du formulaire
+                           donneurs_dict=donneurs_dict) # pour affichage dans le tableau
 
 # Dashboard Responsable Plateau (vide pour l'instant)
+from datetime import datetime
+
 @app.route('/responsable-dashboard')
 @jwt_required()
 def responsable_dashboard():
-    current_user_id = get_jwt_identity()
-    user = Utilisateur.query.get(int(current_user_id))
-    if not user or user.role != 'responsable_plateau':
+    current_user_id = int(get_jwt_identity())
+    user = Utilisateur.query.get_or_404(current_user_id)
+
+    if user.role != 'responsable_plateau':
         flash('Accès réservé aux responsables plateau', 'error')
         return redirect(url_for('login'))
-    return render_template('responsable_dashboard.html')
 
-# Dashboard Manager (vide pour l'instant)
+    if not user.do_id:
+        flash("Aucun Donneur d'Ordre n'est affecté à votre compte.", 'error')
+        return redirect(url_for('login'))
+
+    do = DonneurdOrdre.query.get(user.do_id)
+
+    # === FILTRAGE FORT SUR TOUTES LES TABLES ===
+    powerbi_base = "https://app.powerbi.com/reportEmbed?reportId=49c058b3-614b-48ec-a925-aa7b067a00a8&autoAuth=true&ctid=604f1a96-cbe8-43f8-abbf-f8eaf5d85730"
+    
+    filter_str = (
+        f"DonneurdOrdre/id eq {user.do_id} and "
+        f"Campagne/do_id eq {user.do_id} and "
+        f"CDR/do_id eq {user.do_id}"
+    )
+
+    powerbi_url = f"{powerbi_base}&filter={filter_str}&ts={int(datetime.now().timestamp())}"
+
+    return render_template('responsable_dashboard.html', 
+                           user=user, 
+                           do=do, 
+                           powerbi_url=powerbi_url)
+
+
 @app.route('/manager-dashboard')
 @jwt_required()
 def manager_dashboard():
-    current_user_id = get_jwt_identity()
-    user = Utilisateur.query.get(int(current_user_id))
-    if not user or user.role != 'manager':
+    current_user_id = int(get_jwt_identity())
+    user = Utilisateur.query.get_or_404(current_user_id)
+
+    if user.role != 'manager':
         flash('Accès réservé aux managers', 'error')
         return redirect(url_for('login'))
-    return render_template('manager_dashboard.html')
+
+    if not user.do_id:
+        flash("Aucun Donneur d'Ordre n'est affecté à votre compte.", 'error')
+        return redirect(url_for('login'))
+
+    do = DonneurdOrdre.query.get(user.do_id)
+
+    powerbi_base = "https://app.powerbi.com/reportEmbed?reportId=49c058b3-614b-48ec-a925-aa7b067a00a8&autoAuth=true&ctid=604f1a96-cbe8-43f8-abbf-f8eaf5d85730"
+    
+    filter_str = (
+        f"DonneurdOrdre/id eq {user.do_id} and "
+        f"Campagne/do_id eq {user.do_id} and "
+        f"CDR/do_id eq {user.do_id}"
+    )
+
+    powerbi_url = f"{powerbi_base}&filter={filter_str}&ts={int(datetime.now().timestamp())}"
+
+    return render_template('manager_dashboard.html', 
+                           user=user, 
+                           do=do, 
+                           powerbi_url=powerbi_url)
 # Création de comptes par le responsable plateau (seulement pour des managers)
 @app.route('/responsable/creation-comptes', methods=['GET', 'POST'])
 @jwt_required()

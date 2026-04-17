@@ -27,7 +27,7 @@
 </button>
         <h1 class="text-3xl font-bold">Gestion des NPV</h1>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 mt-32">
             <div class="relative w-80">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher NPV..." 
                        class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
@@ -165,12 +165,23 @@
 
                 <!-- Statut -->
                 <div>
-                    <label class="block text-sm font-medium mb-2">Statut <span class="text-red-500">*</span></label>
-                    <select name="statut" id="statut" required 
-                            class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
-                        <option value="Actif">Actif</option>
-                        <option value="Inactif">Inactif</option>
-                    </select>
+    
+    
+    <!-- Toggle Switch -->
+    <div>
+                        <label class="block text-sm font-medium mb-2">Statut <span class="text-red-500">*</span></label>
+                        <div class="flex items-center gap-3 mt-2">
+                            <span class="text-sm text-gray-500">Inactif</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="statut_toggle" 
+                                       onchange="toggleStatut(this)" 
+                                       class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                            </label>
+                            <span class="text-sm font-medium text-orange-600">Actif</span>
+                        </div>
+                        <input type="hidden" name="statut" id="statut_hidden" value="Inactif">
+                    </div>
                 </div>
 
                 <!-- Campagne -->
@@ -178,12 +189,13 @@
                     <label class="block text-sm font-medium mb-2">Campagne <span class="text-red-500">*</span></label>
                     <select name="campagne_id" id="campagne_id" required 
                             class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
-                        <option value="">-- Choisir une campagne --</option>
+                        <option value="">-- Sélectionner une campagne --</option>
                         {% for c in campagnes %}
                         <option value="{{ c.id }}">{{ c.nom }}</option>
                         {% endfor %}
                     </select>
                 </div>
+
             </form>
         </div>
 
@@ -257,26 +269,24 @@
         document.getElementById('npvForm').reset();
     }
 
-    function editNPV(id, numero, statut, campagne_id) {
-    document.getElementById('npvModal').classList.remove('hidden');
+function editNPV(id, numero, statut, campagne_id) {
     document.getElementById('modalTitle').textContent = 'Modifier NPV';
     document.getElementById('formAction').value = 'update';
     document.getElementById('npvId').value = id;
-
     document.getElementById('numero').value = numero;
-    document.getElementById('statut').value = statut;
 
-    // Correction : affichage correct de la campagne sélectionnée
-    if (campagne_id && campagne_id !== 'null' && campagne_id !== null) {
-        document.getElementById('campagne_id').value = campagne_id;
-    } else {
-        document.getElementById('campagne_id').value = '';
-    }
+    // Pré-remplir le toggle Statut
+    const toggle = document.getElementById('statut_toggle');
+    toggle.checked = (statut === "Actif");
 
-    // Réinitialiser la validation
-    document.getElementById('npvForm').onsubmit = function() {
-        return validateNPVForm();
-    };
+    // Pré-remplir le champ caché
+    document.getElementById('statut_hidden').value = statut;
+
+    // Pré-remplir la campagne
+    const campagneSelect = document.getElementById('campagne_id');
+    campagneSelect.value = campagne_id || "";
+
+    document.getElementById('npvModal').classList.remove('hidden');
 }
 
     function closeModal() {
@@ -481,6 +491,26 @@ function validateNPVForm() {
         return false;
     }
 
+    return true;
+
+}
+function toggleStatut(checkbox) {
+    document.getElementById('statut_hidden').value = checkbox.checked ? "Actif" : "Inactif";
+}
+
+// Validation simple
+function validateNPVForm() {
+    const numero = document.getElementById('numero').value.trim();
+    const campagne = document.getElementById('campagne_id').value;
+
+    if (!numero) {
+        alert("Le numéro est obligatoire");
+        return false;
+    }
+    if (!campagne) {
+        alert("Veuillez sélectionner une campagne");
+        return false;
+    }
     return true;
 }
 </script>
