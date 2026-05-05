@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Factures – Outsourcia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .table-scroll { max-height:380px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#fed7aa #fff7ed; }
+        .camp-scroll  { max-height:210px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#fed7aa #fff7ed; }
+        .tab-btn { transition:all .18s ease; border-bottom:3px solid transparent; }
+        .tab-btn.active { border-color:var(--orange); color:var(--orange); font-weight:700; }
+        .modal-backdrop { backdrop-filter:blur(4px); }
+        :root {
+            --orange:#f97316;--orange-dark:#ea580c;--orange-glow:rgba(249,115,22,0.18);
+            --sidebar-bg:linear-gradient(180deg,#1e3a8a,#172554);--sidebar-w:260px;--header-h:64px;
+            --surface:#ffffff;--surface-2:#f8f9fb;--border:#e8eaee;--text-primary:#0f1117;
+            --text-secondary:#6b7280;--text-muted:#9ca3af;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'DM Sans',sans-serif;background:var(--surface-2);color:var(--text-primary);min-height:100vh;display:flex}
+        #sidebar{width:var(--sidebar-w);height:100vh;background:var(--sidebar-bg);display:flex;flex-direction:column;flex-shrink:0;position:relative;z-index:50;transition:transform .3s;overflow-y:auto}
+        #sidebar::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.08) 0%,transparent 60%);pointer-events:none}
+        #sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(to bottom,transparent,rgba(249,115,22,.3) 40%,transparent)}
+        .sidebar-logo{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+        .sidebar-logo img{height:38px;width:auto;max-width:150px;object-fit:contain}
+        .sidebar-user{padding:6px 10px;margin:5px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;align-items:center;gap:10px}
+        .sidebar-user-avatar{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),var(--orange-dark));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:white;flex-shrink:0}
+        .sidebar-user-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.9)}
+        .sidebar-user-role{font-size:11px;color:var(--orange);font-weight:500}
+        .sidebar-nav{flex:1;overflow-y:auto;padding:8px 12px 12px;scrollbar-width:none;min-height:0}
+        .sidebar-nav::-webkit-scrollbar{display:none}
+        .nav-section-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);padding:8px 10px 3px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;color:rgba(255,255,255,.55);font-size:12.5px;text-decoration:none;transition:all .18s;position:relative;cursor:pointer;margin-bottom:2px}
+        .nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9)}
+        .nav-item.active{background:rgba(249,115,22,.15);color:var(--orange)}
+        .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--orange);border-radius:0 3px 3px 0}
+        .nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
+        .nav-item:hover .nav-icon,.nav-item.active .nav-icon{opacity:1}
+        .sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+        .btn-logout{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;color:rgba(239,68,68,.7);font-size:13.5px;font-weight:500;text-decoration:none;transition:all .18s;background:none;border:none;cursor:pointer}
+        .btn-logout:hover{background:rgba(239,68,68,.08);color:rgb(239,68,68)}
+        .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;height:100vh}
+        .top-header{height:var(--header-h);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:30;background:linear-gradient(135deg,#ffffff 65%,#fff7ed);border-bottom:1px solid rgba(249,115,22,0.12);backdrop-filter:blur(10px)}
+        .top-header::after{content:'';position:absolute;bottom:0;left:0;height:2px;width:100%;background:linear-gradient(90deg,transparent,#f97316,#fb923c,#f97316,transparent);background-size:200% 100%;animation:flowLine 4s linear infinite;opacity:0.7}
+        @keyframes flowLine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .page-title-block h1{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:linear-gradient(135deg,#f97316,#ea580c,#fb923c);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradientMove 4s ease infinite}
+        @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        .page-title-block p{font-size:12.5px;color:var(--text-muted);margin-top:2px;opacity:0;transform:translateY(6px);animation:fadeUp 0.6s ease forwards;animation-delay:0.2s}
+        @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+        .page-title-block{position:relative}
+        .page-title-block::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:4px;height:60%;background:linear-gradient(to bottom,#f97316,#fb923c);border-radius:4px;box-shadow:0 0 12px rgba(249,115,22,0.4)}
+        .header-right{display:flex;align-items:center;gap:12px}
+        .header-date{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border);padding:6px 14px;border-radius:8px;display:flex;align-items:center;gap:6px}
+        .btn-export{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--orange),var(--orange-dark));color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:8px 18px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;box-shadow:0 3px 12px rgba(249,115,22,.3);text-decoration:none}
+        .btn-export:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,.4)}
+        .btn-export:active{transform:translateY(0)}
+        .content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px 28px;scrollbar-width:thin;scrollbar-color:#e0e0e0 transparent;min-height:0}
+        .full-width-container{width:100%}
+        .btn-orange{background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 4px 18px rgba(249,115,22,.35);transition:all .2s;border:none;cursor:pointer;color:white;font-weight:700}
+        .btn-orange:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 26px rgba(249,115,22,.45)}
+        .btn-orange:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
+        .badge-sent{background:#dcfce7;color:#16a34a}
+        .badge-planned{background:#fef9c3;color:#ca8a04}
+        .badge-pending{background:#f3f4f6;color:#6b7280}
+        .badge-recurrent{background:#ede9fe;color:#7c3aed}
+        .pcard{cursor:pointer;border:2px solid #e5e7eb;transition:all .18s;border-radius:16px}
+        .pcard:hover{border-color:var(--orange);background:#fff7ed;transform:translateY(-2px);box-shadow:0 6px 20px rgba(249,115,22,.12)}
+        .pcard.active{border-color:var(--orange);background:#fff7ed;box-shadow:0 0 0 3px rgba(249,115,22,.18)}
+        .pcard.active .picon{background:var(--orange);color:white}
+        .pcard.active .plbl{color:#c2410c;font-weight:700}
+        .pcard.active .pdesc{color:#ea580c}
+        @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+        .shimmer{background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:600px 100%;animation:shimmer 1.4s infinite;border-radius:10px}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .fade-up{animation:fadeUp .3s ease forwards}
+        #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;backdrop-filter:blur(2px)}
+        .mobile-menu-btn{display:none;align-items:center;justify-content:center;width:38px;height:38px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text-primary)}
+        @media (max-width:768px){ #sidebar{position:fixed;top:0;left:0;transform:translateX(-100%)}#sidebar.open{transform:translateX(0)}#sidebarOverlay.open{display:block}.mobile-menu-btn{display:flex}body{overflow:auto}.main-area{height:100vh}}
+        @keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .animate-in{animation:fadeSlideIn .4s ease both}
+        .animate-in-delay-1{animation-delay:.08s}
+        .animate-in-delay-2{animation-delay:.16s}
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<aside id="sidebar">
+    <div class="sidebar-logo"><img src="{{ url_for('static', filename='logo.png') }}" alt="Outsourcia"></div>
+    <div class="sidebar-user"><div class="sidebar-user-avatar">{{ user.prenom[0] }}{{ user.nom[0] }}</div><div><div class="sidebar-user-name">{{ user.nom }} {{ user.prenom }}</div><div class="sidebar-user-role">{{ user.role|capitalize }}</div></div></div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Tableau de bord</a>
+        <div class="nav-section-label">Administration</div>
+        <a href="{{ url_for('gestion_utilisateurs') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Utilisateurs</a>
+        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>Donneurs d'Ordre</a>
+        <a href="{{ url_for('gestion_campagnes') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>Campagnes</a>
+        <a href="{{ url_for('gestion_npv') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>NPV</a>
+        <a href="{{ url_for('gestion_operateurs') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Opérateurs</a>
+        <div class="nav-section-label">Facturation</div>
+        <a href="{{ url_for('gestion_factures') }}" class="nav-item active"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Factures</a>
+        <div class="nav-section-label">Audit</div>
+        <a href="{{ url_for('historique') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Historique</a>
+    </nav>
+    <div class="sidebar-footer"><a href="{{ url_for('logout') }}" class="btn-logout"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Déconnexion</a></div>
+</aside>
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="main-area">
+    <div class="top-header">
+        <div class="page-title-block"><h1>Planificateur de factures</h1><p>Gérez et planifiez vos factures</p></div>
+    </div>
+    <div class="content-area">
+        <div class="full-width-container">
+            <div class="flex gap-0 border-b border-gray-200 mb-8">
+                <button onclick="switchTab('generer')" class="tab-btn active px-6 py-3 text-sm text-gray-600" id="tab-generer">⚡ Générer une facture</button>
+                <button onclick="switchTab('planificateur')" class="tab-btn px-6 py-3 text-sm text-gray-600" id="tab-planificateur">📋 Planificateur <span class="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full font-bold">{{ factures|length }}</span></button>
+            </div>
+
+            <!-- TAB 1 : GÉNÉRER -->
+            <div id="panel-generer" class="hidden full-width-container">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+        <!-- Formulaire -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl">🏢</div>
+                    <div><h2 class="font-bold text-gray-900">Donneur d'Ordre</h2><p class="text-xs text-gray-400">Sélectionnez le DO à facturer</p></div>
+                </div>
+                <select id="doSelect" onchange="onFormChange()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:border-orange-400 transition bg-gray-50">
+                    <option value="">— Choisir un Donneur d'Ordre —</option>
+                    {% for d in donneurs %}<option value="{{ d.id }}">{{ d.nom }}</option>{% endfor %}
+                </select>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-3 mb-5"><div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl">📅</div><div><h2 class="font-bold text-gray-900">Période</h2><p class="text-xs text-gray-400">Définissez la plage temporelle</p></div></div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    
+                    <div class="pcard p-4" onclick="selectPeriode('journaliere')"><div class="picon w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg mb-2 transition">☀️</div><div class="plbl text-sm font-semibold text-gray-700">Journalière</div><div class="pdesc text-xs text-gray-400 mt-0.5">Aujourd'hui</div></div>
+                    <div class="pcard p-4" onclick="selectPeriode('hebdomadaire')"><div class="picon w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg mb-2 transition">📆</div><div class="plbl text-sm font-semibold text-gray-700">Hebdomadaire</div><div class="pdesc text-xs text-gray-400 mt-0.5">7 derniers jours</div></div>
+                    <div class="pcard p-4" onclick="selectPeriode('mensuelle')"><div class="picon w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg mb-2 transition">🗓️</div><div class="plbl text-sm font-semibold text-gray-700">Mensuelle</div><div class="pdesc text-xs text-gray-400 mt-0.5">30 derniers jours</div></div>
+                    <div class="pcard p-4" onclick="selectPeriode('trimestrielle')"><div class="picon w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg mb-2 transition">📊</div><div class="plbl text-sm font-semibold text-gray-700">Trimestrielle</div><div class="pdesc text-xs text-gray-400 mt-0.5">90 derniers jours</div></div>
+                </div>
+                <div class="pcard p-4" onclick="selectPeriode('personnalisee')"><div class="flex items-center gap-3"><div class="picon w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg transition">⚙️</div><div><div class="plbl text-sm font-semibold text-gray-700">Personnalisée</div><div class="pdesc text-xs text-gray-400">Dates personnalisées</div></div></div></div>
+                <div id="datesPerso" class="hidden mt-4 grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold text-gray-500 mb-1.5">Date début</label><input type="date" id="dateDebut" onchange="onPersoChange()" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 transition"></div>
+                    <div><label class="block text-xs font-semibold text-gray-500 mb-1.5">Date fin</label><input type="date" id="dateFin" onchange="onPersoChange()" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 transition"></div>
+                </div>
+                <div id="periodeResume" class="hidden mt-4 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl"><p class="text-xs text-orange-700 font-semibold">Période sélectionnée</p><p id="periodeTexte" class="text-sm font-bold text-orange-900 mt-0.5"></p></div>
+            </div>
+
+            <button id="btnApercu" onclick="chargerApercu()" disabled class="w-full py-3.5 rounded-xl font-semibold text-sm border-2 border-orange-300 text-orange-600 hover:bg-orange-50 transition disabled:opacity-40 disabled:cursor-not-allowed">👁 Charger l'aperçu</button>
+        </div>
+
+        <!-- Aperçu -->
+        <div class="space-y-5">
+            <div id="apercuPlaceholder" class="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-14 text-center"><div class="text-6xl mb-4">🧾</div><p class="font-semibold text-gray-500">Aperçu de la facture</p><p class="text-xs text-gray-400 mt-2">Sélectionnez un DO et une période<br>puis chargez l'aperçu</p></div>
+            <div id="apercuLoading" class="hidden space-y-3"><div class="shimmer h-32 w-full"></div><div class="shimmer h-10 w-2/3"></div><div class="shimmer h-40 w-full"></div><div class="shimmer h-16 w-full"></div></div>
+            <div id="apercuContent" class="hidden space-y-4 fade-up">
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 px-7 py-6">
+                        <div class="flex items-start justify-between"><div><p class="text-orange-100 text-xs font-semibold uppercase tracking-widest mb-1">Facture pour</p><h3 id="apDONom" class="text-white text-2xl font-bold"></h3><p id="apPeriode" class="text-orange-200 text-sm mt-1"></p></div><div class="text-right"><p class="text-orange-100 text-xs font-semibold uppercase tracking-widest mb-1">Montant total</p><p id="apMontant" class="text-white text-3xl font-bold mono"></p></div></div>
+                    </div>
+                    <div class="grid grid-cols-3 divide-x divide-gray-100"><div class="px-5 py-4"><p class="text-xs text-gray-400 font-medium">Campagnes</p><p id="apNbCamp" class="text-xl font-bold text-gray-900 mt-0.5"></p></div><div class="px-5 py-4"><p class="text-xs text-gray-400 font-medium">Total appels</p><p id="apNbAppels" class="text-xl font-bold text-gray-900 mt-0.5"></p></div><div class="px-5 py-4"><p class="text-xs text-gray-400 font-medium">Coût moy./appel</p><p id="apCoutMoy" class="text-xl font-bold text-orange-600 mt-0.5 mono"></p></div></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between"><h4 class="font-bold text-gray-900 text-sm">Détail par campagne</h4><span id="apBadge" class="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full"></span></div>
+                    <div class="camp-scroll"><table class="w-full text-xs"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-5 py-3 text-left font-semibold text-gray-500">Campagne</th><th class="px-4 py-3 text-right font-semibold text-gray-500">Appels</th><th class="px-4 py-3 text-right font-semibold text-gray-500">Montant</th></tr></thead><tbody id="apTableBody" class="divide-y divide-gray-50"></tbody></table><div id="apVide" class="hidden py-8 text-center text-gray-400">Aucun appel trouvé sur cette période.</div></div>
+                </div>
+                <button onclick="genererFacture()" id="btnGenerer" class="btn-orange w-full py-4 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-3"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Générer et télécharger la facture PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <!-- TAB 2 : PLANIFICATEUR -->
+            <div id="panel-planificateur" class="full-width-container">
+                {% if factures %}
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                        <div><h2 class="font-bold text-gray-900">Factures générées</h2><p class="text-xs text-gray-400 mt-0.5">Gérez l'envoi et la planification</p></div>
+                        <span class="px-3 py-1.5 bg-orange-100 text-orange-700 text-sm font-bold rounded-full">{{ factures|length }} facture{{ 's' if factures|length > 1 else '' }}</span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 border-b border-gray-100 sticky top-0"><tr><th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">N° Facture</th><th class="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase">DO</th><th class="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Période</th><th class="px-5 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Appels</th><th class="px-5 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Montant</th><th class="px-5 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Statut</th><th class="px-5 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Envoi</th><th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Actions</th></tr></thead>
+                            <tbody class="divide-y divide-gray-50">
+                                {% for f in factures %}
+                                <tr class="hover:bg-orange-50/30 transition" id="row-{{ f.id }}">
+                                    <td class="px-6 py-4"><span class="mono text-xs text-orange-700 font-semibold bg-orange-50 px-2 py-1 rounded-lg">{{ f.numero_facture }}</span></td>
+                                    <td class="px-5 py-4 font-semibold text-gray-900">{{ f.do.nom }}</td>
+                                    <td class="px-5 py-4 text-gray-600 text-xs">{{ f.date_debut.strftime('%d/%m/%Y') }} → {{ f.date_fin.strftime('%d/%m/%Y') }}</td>
+                                    <td class="px-5 py-4 text-right mono text-gray-700">{{ '{:,}'.format(f.nb_appels) }}</td>
+                                    <td class="px-5 py-4 text-right mono font-bold text-gray-900">{{ '{:,.4f}'.format(f.montant_total) }} €</td>
+                                    <td class="px-5 py-4 text-center">
+                                        {% if f.envoyee %}<span class="badge badge-sent">✓ Envoyée</span>
+                                        {% elif f.recurrence_active %}<span class="badge badge-recurrent">🔄 Récurrente</span>
+                                        {% elif f.date_envoi_planif %}<span class="badge badge-planned">⏰ Planifiée</span>
+                                        {% else %}<span class="badge badge-pending">En attente</span>{% endif %}
+                                    </td>
+                                    <td class="px-5 py-4 text-center text-xs text-gray-500">
+                                        {% if f.date_envoi_planif %}<div class="font-semibold text-amber-700">{{ f.date_envoi_planif.strftime('%d/%m/%Y') }}</div><div class="text-gray-400">{{ f.date_envoi_planif.strftime('%H:%M') }}</div>
+                                        {% if f.email_destinataire %}<div class="text-xs text-gray-400 mt-0.5 truncate max-w-[120px]">{{ f.email_destinataire }}</div>{% endif %}
+                                        {% else %}<span class="text-gray-300">—</span>{% endif %}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{{ url_for('telecharger_facture', facture_id=f.id) }}" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-orange-600 flex items-center justify-center transition" title="Télécharger"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></a>
+                                            <button data-id="{{ f.id }}" data-do="{{ f.do.nom }}" data-ref="{{ f.numero_facture }}" data-email="{{ f.email_destinataire or '' }}" data-liste="{{ f.liste_diffusion or '' }}" data-recurrence="{{ 'true' if f.recurrence_active else 'false' }}" data-periode="{{ f.periode_type or '' }}" onclick="openPlanifModalFromButton(this)" class="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition" title="Planifier"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
+                                            {% if f.email_destinataire %}<button onclick="envoyerMaintenant({{ f.id }}, '{{ f.do.nom }}')" class="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 flex items-center justify-center transition" title="Envoyer"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>{% endif %}
+                                            <button onclick="supprimerFacture({{ f.id }}, '{{ f.numero_facture }}')" class="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition" title="Supprimer"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-20 text-center"><div class="text-6xl mb-4">📭</div><p class="font-semibold text-gray-500 text-lg">Aucune facture générée</p><p class="text-sm text-gray-400 mt-2">Générez votre première facture</p><button onclick="switchTab('generer')" class="mt-6 btn-orange px-8 py-3 rounded-xl text-white font-semibold text-sm">⚡ Créer une facture</button></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PLANIFICATION -->
+<div id="planifModal" class="hidden fixed inset-0 z-[80] flex items-center justify-center modal-backdrop bg-black/50">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
+        <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-8 py-6 flex items-center justify-between"><div><h3 class="text-white text-xl font-bold">Planifier l'envoi</h3><p id="modalFactureRef" class="text-amber-100 text-sm mt-0.5"></p></div><button onclick="closePlanifModal()" class="text-white/70 hover:text-white text-2xl leading-none">✕</button></div>
+        <div class="p-8 space-y-5 overflow-y-auto">
+            <input type="hidden" id="modalFactureId">
+            <div><label class="block text-sm font-bold text-gray-700 mb-2">📧 Email destinataire <span class="text-red-500">*</span></label><input type="email" id="modalEmail" placeholder="contact@donneur-ordre.com" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400"></div>
+            <div><label class="block text-sm font-bold text-gray-700 mb-2">📋 Liste de diffusion <span class="text-xs text-gray-400">(emails séparés par virgules)</span></label><textarea id="modalListe" rows="3" placeholder="cc1@email.com, cc2@email.com" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400 resize-none"></textarea><div id="modalListePreview" class="mt-2 flex flex-wrap gap-1.5"></div></div>
+            <div><label class="block text-sm font-bold text-gray-700 mb-2">⏰ Date et heure d'envoi <span class="text-red-500">*</span></label><input type="datetime-local" id="modalDateEnvoi" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-400"></div>
+            
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="modalRecurrence" onchange="toggleRecurrenceOptions()" class="w-5 h-5 rounded border-amber-300 text-orange-500 focus:ring-orange-400"><span class="text-sm font-bold text-amber-800">🔄 Envoi récurrent automatique</span></label>
+                <div id="recurrenceOptions" class="hidden mt-3">
+                    <label class="block text-xs font-semibold text-amber-700 mb-2">Fréquence :</label>
+                    <select id="modalPeriodeType" class="w-full px-4 py-2.5 border-2 border-amber-200 rounded-xl text-sm focus:border-orange-400"><option value="hebdomadaire">📆 Hebdomadaire (7 jours)</option><option value="mensuelle">🗓️ Mensuelle (30 jours)</option><option value="trimestrielle">📊 Trimestrielle (90 jours)</option><option value="journaliere">☀️ Journalière</option><option value="2_minutes">⏱️ Chaque 2 minutes (test)</option></select>
+                    <p class="text-xs text-amber-600 mt-2">⚡ Une nouvelle facture sera générée et envoyée automatiquement à chaque période.</p>
+                </div>
+            </div>
+            <div id="destinatairesPreview" class="hidden p-4 bg-green-50 border border-green-200 rounded-xl"><p class="text-xs font-bold text-green-700 mb-2">✉️ Destinataires :</p><div id="destinatairesList" class="flex flex-wrap gap-2"></div></div>
+        </div>
+        <div class="px-8 py-5 border-t border-gray-100 flex gap-3">
+            <button onclick="closePlanifModal()" class="flex-1 py-3.5 text-gray-600 font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-sm">Annuler</button>
+            <button onclick="sauvegarderPlanif()" class="flex-1 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl shadow-md text-sm">⏰ Planifier</button>
+            <button onclick="envoyerDepuisModal()" class="flex-1 py-3.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-md text-sm">📤 Envoyer</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="fixed bottom-6 right-6 z-[100] hidden"><div id="toastContent" class="px-6 py-4 rounded-2xl shadow-2xl text-white font-semibold flex items-center gap-3 text-sm"><span id="toastIcon"></span><span id="toastMsg"></span></div></div>
+<form id="formGenerer" method="POST" action="{{ url_for('generer_facture') }}" class="hidden"><input type="hidden" name="do_id" id="hiddenDoId"><input type="hidden" name="date_debut" id="hiddenDateDebut"><input type="hidden" name="date_fin" id="hiddenDateFin"></form>
+
+<script>
+const PLANIFIER_URL="{{ url_for('planifier_facture') }}",ENVOYER_BASE_URL="{{ url_for('envoyer_facture',facture_id=0) }}".replace('/0',''),SUPPRIMER_BASE_URL="{{ url_for('supprimer_facture',facture_id=0) }}".replace('/0','');
+
+function openSidebar(){document.getElementById('sidebar').classList.remove('-translate-x-full');document.getElementById('sidebarOverlay').classList.remove('hidden')}
+function closeSidebar(){document.getElementById('sidebar').classList.add('-translate-x-full');document.getElementById('sidebarOverlay').classList.add('hidden')}
+function switchTab(n){['generer','planificateur'].forEach(t=>{document.getElementById('panel-'+t).classList.toggle('hidden',t!==n);document.getElementById('tab-'+t).classList.toggle('active',t===n)})}
+
+let periodeActive=null,dateDebutISO=null,dateFinISO=null;
+function selectPeriode(t){
+    periodeActive=t;document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('active'));
+    const i=['journaliere','hebdomadaire','mensuelle','trimestrielle','personnalisee'].indexOf(t);
+    if(i>=0)document.querySelectorAll('.pcard')[i].classList.add('active');
+    const n=new Date();n.setHours(23,59,59,0);const d=new Date();d.setHours(0,0,0,0);
+    if(t==='journaliere'){dateDebutISO=isoLocal(d);dateFinISO=isoLocal(n)}else if(t==='hebdomadaire'){d.setDate(d.getDate()-7);dateDebutISO=isoLocal(d);dateFinISO=isoLocal(n)}else if(t==='mensuelle'){d.setDate(d.getDate()-30);dateDebutISO=isoLocal(d);dateFinISO=isoLocal(n)}else if(t==='trimestrielle'){d.setDate(d.getDate()-90);dateDebutISO=isoLocal(d);dateFinISO=isoLocal(n)}else{dateDebutISO=null;dateFinISO=null}
+    document.getElementById('datesPerso').classList.toggle('hidden',t!=='personnalisee');
+    if(t!=='personnalisee'&&dateDebutISO)showResume(new Date(dateDebutISO),new Date(dateFinISO));else document.getElementById('periodeResume').classList.add('hidden');
+    onFormChange();
+}
+function onPersoChange(){const dd=document.getElementById('dateDebut').value,df=document.getElementById('dateFin').value;dateDebutISO=dd?dd+'T00:00:00':null;dateFinISO=df?df+'T23:59:59':null;if(dd&&df)showResume(new Date(dd),new Date(df));onFormChange()}
+function showResume(d,f){document.getElementById('periodeTexte').textContent=`${fmtDate(d)} → ${fmtDate(f)}`;document.getElementById('periodeResume').classList.remove('hidden')}
+function onFormChange(){document.getElementById('btnApercu').disabled=!(document.getElementById('doSelect').value&&periodeActive&&dateDebutISO&&dateFinISO)}
+
+async function chargerApercu(){
+    const doId=document.getElementById('doSelect').value;
+    ['apercuPlaceholder','apercuContent'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById('apercuLoading').classList.remove('hidden');
+    try{
+        const resp=await fetch("{{ url_for('apercu_facture') }}",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({do_id:+doId,date_debut:dateDebutISO,date_fin:dateFinISO})});
+        const data=await resp.json();
+        const totalAppels=data.campagnes.reduce((s,c)=>s+c.nb_appels,0),coutMoy=totalAppels?data.montant_total/totalAppels:0;
+        document.getElementById('apDONom').textContent=data.do_nom;
+        document.getElementById('apPeriode').textContent=`${data.date_debut} → ${data.date_fin}`;
+        document.getElementById('apMontant').textContent=fmtMontant(data.montant_total)+' €';
+        document.getElementById('apNbCamp').textContent=data.nb_campagnes;
+        document.getElementById('apNbAppels').textContent=totalAppels.toLocaleString('fr-FR');
+        document.getElementById('apCoutMoy').textContent=fmtMontant(coutMoy)+' €';
+        document.getElementById('apBadge').textContent=data.campagnes.length+' campagne'+(data.campagnes.length>1?'s':'');
+        const tbody=document.getElementById('apTableBody');tbody.innerHTML='';
+        document.getElementById('apVide').classList.toggle('hidden',data.campagnes.length>0);
+        data.campagnes.forEach((c,i)=>{const tr=document.createElement('tr');tr.className=i%2===0?'bg-white hover:bg-orange-50/50':'bg-gray-50/40 hover:bg-orange-50/50';tr.innerHTML=`<td class="px-5 py-3 text-gray-800 font-medium">${c.nom}</td><td class="px-4 py-3 text-right mono text-gray-600">${c.nb_appels.toLocaleString('fr-FR')}</td><td class="px-4 py-3 text-right mono font-semibold text-gray-900">${fmtMontant(c.montant)} €</td>`;tbody.appendChild(tr)});
+        document.getElementById('hiddenDoId').value=doId;document.getElementById('hiddenDateDebut').value=dateDebutISO;document.getElementById('hiddenDateFin').value=dateFinISO;
+        document.getElementById('apercuLoading').classList.add('hidden');document.getElementById('apercuContent').classList.remove('hidden');
+        const btn=document.getElementById('btnGenerer');btn.disabled=false;btn.innerHTML='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Générer et télécharger la facture PDF';
+    }catch(e){document.getElementById('apercuLoading').classList.add('hidden');document.getElementById('apercuPlaceholder').classList.remove('hidden');toast("Erreur de chargement de l'aperçu",'error')}
+}
+
+function genererFacture(){
+    const btn=document.getElementById('btnGenerer'),doId=document.getElementById('hiddenDoId').value,dateDebut=document.getElementById('hiddenDateDebut').value,dateFin=document.getElementById('hiddenDateFin').value;
+    if(!doId||!dateDebut||!dateFin){toast("Veuillez d'abord charger l'aperçu",'error');return}
+    btn.disabled=true;btn.innerHTML='<svg class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"/><path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z"/></svg>Génération en cours…';
+    document.getElementById('formGenerer').submit();
+    setTimeout(()=>{btn.disabled=false;btn.innerHTML='<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Générer et télécharger la facture PDF';switchTab('planificateur');location.reload()},3000)
+}
+
+function toggleRecurrenceOptions(){document.getElementById('recurrenceOptions').classList.toggle('hidden',!document.getElementById('modalRecurrence').checked)}
+
+function openPlanifModalFromButton(btn){
+    const id=btn.dataset.id,doNom=btn.dataset.do,ref=btn.dataset.ref,email=btn.dataset.email,liste=btn.dataset.liste,recurrence=btn.dataset.recurrence,periode=btn.dataset.periode;
+    openPlanifModal(id,doNom,ref,email,liste,recurrence==='true',periode);
+}
+
+function openPlanifModal(id,doNom,ref,email,liste,recurrence,periodeType){
+    document.getElementById('planifModal').classList.remove('hidden');
+    document.getElementById('modalFactureId').value=id;
+    document.getElementById('modalFactureRef').textContent=ref+' – '+doNom;
+    document.getElementById('modalEmail').value=email||'';
+    document.getElementById('modalListe').value=liste||'';
+    const d=new Date();d.setDate(d.getDate()+1);d.setHours(9,0,0,0);
+    document.getElementById('modalDateEnvoi').value=d.toISOString().slice(0,16);
+    document.getElementById('modalRecurrence').checked=recurrence===true||recurrence==='true';
+    document.getElementById('modalPeriodeType').value=periodeType||'hebdomadaire';
+    toggleRecurrenceOptions();updateDestinatairesPreview();
+}
+function closePlanifModal(){document.getElementById('planifModal').classList.add('hidden')}
+
+document.getElementById('modalListe').addEventListener('input',updateDestinatairesPreview);
+document.getElementById('modalEmail').addEventListener('input',updateDestinatairesPreview);
+function updateDestinatairesPreview(){
+    const e=document.getElementById('modalEmail').value.trim(),l=document.getElementById('modalListe').value,ex=l.split(',').map(x=>x.trim()).filter(Boolean),tous=[e,...ex].filter(Boolean);
+    const p=document.getElementById('destinatairesList'),w=document.getElementById('destinatairesPreview');p.innerHTML='';
+    if(tous.length){w.classList.remove('hidden');tous.forEach(x=>{const s=document.createElement('span');s.className='px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full';s.textContent=x;p.appendChild(s)})}else w.classList.add('hidden');
+    const lp=document.getElementById('modalListePreview');lp.innerHTML='';ex.forEach(x=>{const b=document.createElement('span');b.className='px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs rounded-full';b.textContent=x;lp.appendChild(b)});
+}
+
+async function sauvegarderPlanif(){
+    const id=document.getElementById('modalFactureId').value,email=document.getElementById('modalEmail').value.trim(),liste=document.getElementById('modalListe').value.trim(),date=document.getElementById('modalDateEnvoi').value;
+    if(!email){toast("L'email est obligatoire",'error');return}if(!date){toast("La date d'envoi est obligatoire",'error');return}
+    const fd=new FormData();fd.append('facture_id',id);fd.append('email_destinataire',email);fd.append('liste_diffusion',liste);fd.append('date_envoi',date);
+    fd.append('recurrence',document.getElementById('modalRecurrence').checked?'on':'');fd.append('periode_type',document.getElementById('modalPeriodeType').value);
+    try{const r=await fetch(PLANIFIER_URL,{method:'POST',body:fd}),d=await r.json();if(d.success){closePlanifModal();toast(d.message,'success');setTimeout(()=>location.reload(),1600)}else toast(d.error||'Erreur','error')}catch(e){toast('Erreur réseau','error')}
+}
+
+async function envoyerDepuisModal(){
+    const id=document.getElementById('modalFactureId').value,email=document.getElementById('modalEmail').value.trim(),liste=document.getElementById('modalListe').value.trim();
+    if(!email){toast("Saisissez l'email destinataire avant d'envoyer",'error');document.getElementById('modalEmail').focus();return}
+    if(!confirm('Envoyer la facture maintenant à '+email+' ?'))return;closePlanifModal();toast('Envoi en cours…','info');
+    const fd=new FormData();fd.append('email_destinataire',email);fd.append('liste_diffusion',liste);
+    try{const r=await fetch(ENVOYER_BASE_URL+'/'+id,{method:'POST',body:fd}),d=await r.json();if(d.success){toast(d.message,'success');setTimeout(()=>location.reload(),1600)}else toast(d.error||"Erreur lors de l'envoi",'error')}catch(e){toast('Erreur réseau','error')}
+}
+
+async function envoyerMaintenant(id,doNom){
+    const label=doNom?'la facture de '+doNom:'cette facture';
+    if(!confirm('Envoyer '+label+' maintenant à l\'email enregistré ?'))return;toast('Envoi en cours…','info');
+    try{const r=await fetch(ENVOYER_BASE_URL+'/'+id,{method:'POST'}),d=await r.json();if(d.success){toast(d.message,'success');setTimeout(()=>location.reload(),1800)}else toast(d.error||'Erreur','error')}catch(e){toast('Erreur réseau','error')}
+}
+
+async function supprimerFacture(id,ref){
+    if(!confirm('Supprimer la facture '+ref+' ? Cette action est irréversible.'))return;
+    try{const r=await fetch(SUPPRIMER_BASE_URL+'/'+id,{method:'POST'}),d=await r.json();if(d.success){document.getElementById('row-'+id)?.remove();toast('Facture supprimée','success')}else toast('Erreur lors de la suppression','error')}catch(e){toast('Erreur réseau','error')}
+}
+
+function toast(msg,type){
+    type=type||'success';
+    const el=document.getElementById('toast'),cont=document.getElementById('toastContent'),icon=document.getElementById('toastIcon'),msgEl=document.getElementById('toastMsg');
+    const colors={success:'#16a34a',error:'#dc2626',info:'#2563eb'},icons={success:'✅',error:'❌',info:'⏳'};
+    cont.style.background=colors[type]||colors.success;icon.textContent=icons[type]||'✅';msgEl.textContent=msg;el.classList.remove('hidden');
+    setTimeout(function(){el.classList.add('hidden')},3500)
+}
+
+function isoLocal(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().replace('Z','').split('.')[0]}
+function fmtDate(d){return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function fmtMontant(v){return parseFloat(v).toLocaleString('fr-FR',{minimumFractionDigits:4,maximumFractionDigits:4})}
+window.onload=function(){switchTab('generer')};
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+import pandas as pd
+from sqlalchemy import create_engine, text
+import os
+
+# ── CHEMIN EXCEL ─────────────────────────────────────────────
+EXCEL_PATH = r"C:\Users\youss\Downloads\Calls_Mezzo_2026-04-20_2026-04-20_1776744073.xlsx"
+SHEET_NAME = "in"
+
+# ── CONNEXION SQL SERVER ─────────────────────────────────────
+CONN_STR = (
+    "mssql+pyodbc:///?odbc_connect="
+    "DRIVER={ODBC Driver 18 for SQL Server};"
+    "SERVER=(localdb)\\MSSQLLocalDB;"
+    "DATABASE=TestCRUD;"
+    "Trusted_Connection=yes;"
+    "TrustServerCertificate=yes;"
+)
+
+# ── CONFIG ───────────────────────────────────────────────────
+NUMERIC_COLS = [
+    'Prix', "Coût de l'appel", 'tarif AMD', 'Surcharge CRM',
+    'Surcharge', 'Recording fee', 'Coût HLM ', 'Prix STT',
+    'Coût STT', 'Coût de la réduction du bruit', 'conv_agent_rate'
+]
+
+COLONNES_A_IGNORER = ['manitrust']
+
+CLES_DOUBLON = ['Date/Heure', 'CLI envoyé', 'Etat', 'Durée Facturée']
+
+
+# ── LECTURE EXCEL ────────────────────────────────────────────
+def lire_excel(path, sheet):
+    print(f"📖 Lecture du fichier Excel : {path}")
+
+    if not os.path.exists(path):
+        print(f"❌ Fichier introuvable : {path}")
+        exit()
+
+    df = pd.read_excel(path, sheet_name=sheet, engine='openpyxl')
+
+    # Nettoyer noms colonnes (TRÈS IMPORTANT)
+    df.columns = df.columns.str.strip()
+
+    print(f"   Lignes lues       : {len(df):,}")
+    print(f"   Colonnes          : {len(df.columns)}")
+
+    return df
+
+
+# ── NETTOYAGE ────────────────────────────────────────────────
+def nettoyer(df):
+    print("\n🔧 Nettoyage des données...")
+
+    # Supprimer colonnes inutiles
+    cols_supprimees = [c for c in COLONNES_A_IGNORER if c in df.columns]
+    if cols_supprimees:
+        df = df.drop(columns=cols_supprimees)
+        print(f"   Colonnes ignorées : {cols_supprimees}")
+
+    # Nettoyage numérique
+    for col in NUMERIC_COLS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col].astype(str)
+                       .str.replace(',', '.', regex=False)
+                       .str.replace(' ', '', regex=False)
+                       .str.replace('€', '', regex=False),
+                errors='coerce'
+            )
+
+    # Dates
+    if 'Date/Heure' in df.columns:
+        df['Date/Heure'] = pd.to_datetime(df['Date/Heure'], dayfirst=True, errors='coerce')
+
+    # Colonnes numériques critiques
+    for col in ['Durée Facturée', 'Durée sonnerie', 'Préfixe',
+                'conv_agent_billsec', 'SIREN']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    print(f"   Lignes après nettoyage : {len(df):,}")
+    return df
+
+
+# ── DÉDUPLICATION ────────────────────────────────────────────
+def filtrer_doublons(df, engine):
+    print("\n🔍 Détection des doublons avec la base existante...")
+
+    cols_sql = ', '.join(f"[{c}]" for c in CLES_DOUBLON)
+    query = f"SELECT {cols_sql} FROM [dbo].[CDR]"
+
+    try:
+        df_existant = pd.read_sql(query, engine)
+        print(f"   Lignes existantes en base : {len(df_existant):,}")
+    except Exception as e:
+        print(f"⚠️ Erreur lecture base : {e}")
+        return df
+
+    if df_existant.empty:
+        print("   Base vide → tout sera inséré")
+        return df
+
+    # 🔥 FIX PRINCIPAL : harmonisation des types
+
+    df['Date/Heure'] = pd.to_datetime(df['Date/Heure'], dayfirst=True, errors='coerce')
+    df_existant['Date/Heure'] = pd.to_datetime(df_existant['Date/Heure'], dayfirst=True, errors='coerce')
+
+    df['CLI envoyé'] = df['CLI envoyé'].astype(str)
+    df_existant['CLI envoyé'] = df_existant['CLI envoyé'].astype(str)
+
+    df['Etat'] = df['Etat'].astype(str)
+    df_existant['Etat'] = df_existant['Etat'].astype(str)
+
+    df['Durée Facturée'] = pd.to_numeric(df['Durée Facturée'], errors='coerce')
+    df_existant['Durée Facturée'] = pd.to_numeric(df_existant['Durée Facturée'], errors='coerce')
+
+    # Merge
+    df_merged = df.merge(
+        df_existant[CLES_DOUBLON],
+        on=CLES_DOUBLON,
+        how='left',
+        indicator=True
+    )
+
+    df_nouveaux = df_merged[df_merged['_merge'] == 'left_only'].drop(columns=['_merge'])
+
+    print(f"   Doublons détectés  : {len(df) - len(df_nouveaux):,}")
+    print(f"   Nouvelles lignes   : {len(df_nouveaux):,}")
+
+    return df_nouveaux
+
+
+# ── INSERTION ────────────────────────────────────────────────
+def importer(df, engine, chunk_size=500):
+    if df.empty:
+        print("\n✅ Aucune nouvelle ligne à insérer.")
+        return 0
+
+    print(f"\n📥 Insertion de {len(df):,} lignes...")
+
+    total = 0
+
+    for i, start in enumerate(range(0, len(df), chunk_size)):
+        chunk = df.iloc[start:start + chunk_size]
+
+        try:
+            chunk.to_sql(
+                'CDR',
+                con=engine,
+                schema='dbo',
+                if_exists='append',
+                index=False
+            )
+            total += len(chunk)
+            print(f"   Chunk {i+1} → {total:,} lignes", end='\r')
+
+        except Exception as e:
+            print(f"\n❌ Erreur chunk {i+1} : {e}")
+
+    print()
+    return total
+
+
+# ── MAIN ─────────────────────────────────────────────────────
+def main():
+    print("=" * 60)
+    print("  Import CDR — 2026-04-20")
+    print("=" * 60)
+
+    engine = create_engine(CONN_STR)
+
+    # Test connexion
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM [dbo].[CDR]"))
+        count_avant = result.fetchone()[0]
+
+    print(f"\n📊 Lignes actuelles : {count_avant:,}")
+
+    df = lire_excel(EXCEL_PATH, SHEET_NAME)
+    df = nettoyer(df)
+
+    df_nouveaux = filtrer_doublons(df, engine)
+
+    inseres = importer(df_nouveaux, engine)
+
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT COUNT(*) FROM [dbo].[CDR]"))
+        count_apres = result.fetchone()[0]
+
+    print("\n" + "=" * 60)
+    print(f"✔️ Nouvelles lignes : {inseres:,}")
+    print(f"📊 Total après      : {count_apres:,}")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

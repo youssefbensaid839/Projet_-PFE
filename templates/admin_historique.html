@@ -3,256 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historique des Actions</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Historique des Actions – Outsourcia</title>
     <script>
-        tailwind.config = { 
-            theme: { 
-                extend: { 
-                    colors: { 
-                        primary: '#f97316',
-                        primaryDark: '#c2410c'
-                    } 
-                } 
-            } 
-        }
+    tailwind.config = { darkMode: 'class' }
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --orange:       #f97316;
+            --orange-dark:  #ea580c;
+            --sidebar-bg:  linear-gradient(180deg, #1e3a8a, #172554);
+            --sidebar-w:    260px;
+            --header-h:     64px;
+            --surface:      #ffffff;
+            --surface-2:    #f8f9fb;
+            --border:       #e8eaee;
+            --text-primary: #0f1117;
+            --text-sec:     #6b7280;
+            --text-muted:   #9ca3af;
+        }
+
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'DM Sans',sans-serif; background:var(--surface-2); color:var(--text-primary); height:100vh; overflow:hidden; display:flex; }
+
+        /* ══ SIDEBAR (inchangée) ══ */
+        #sidebar { width:var(--sidebar-w); height:100vh; background:var(--sidebar-bg); display:flex; flex-direction:column; flex-shrink:0; position:relative; z-index:50; transition:transform .3s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+        #sidebar::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.08) 0%,transparent 60%); pointer-events:none; }
+        #sidebar::after { content:''; position:absolute; top:0; right:0; width:1px; height:100%; background:linear-gradient(to bottom,transparent,rgba(249,115,22,.3) 40%,transparent); }
+        .sidebar-logo { padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,.06); }
+        .sidebar-logo img { height:36px; }
+        .sidebar-user { padding:8px 10px; margin:6px 10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; display:flex; align-items:center; gap:10px; }
+        .sidebar-user-avatar { width:34px; height:34px; background:linear-gradient(135deg,var(--orange),var(--orange-dark)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:white; flex-shrink:0; }
+        .sidebar-user-name { font-size:13px; font-weight:600; color:rgba(255,255,255,.9); line-height:1.2; }
+        .sidebar-user-role { font-size:11px; color:var(--orange); font-weight:500; }
+        .sidebar-nav { flex:1; overflow-y:auto; padding:8px 12px 12px; scrollbar-width:none; }
+        .sidebar-nav::-webkit-scrollbar { display:none; }
+        .nav-section-label { font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.25); padding:10px 10px 4px; }
+        .nav-item { display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:10px; color:rgba(255,255,255,.55); font-size:12px; font-weight:500; text-decoration:none; transition:all .18s ease; position:relative; cursor:pointer; margin-bottom:2px; }
+        .nav-item:hover { background:rgba(255,255,255,.06); color:rgba(255,255,255,.9); }
+        .nav-item.active { background:rgba(249,115,22,.15); color:var(--orange); }
+        .nav-item.active::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); width:3px; height:60%; background:var(--orange); border-radius:0 3px 3px 0; }
+        .nav-icon { width:18px; height:18px; flex-shrink:0; opacity:.7; }
+        .nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity:1; }
+        .sidebar-footer { padding:10px 10px; border-top:1px solid rgba(255,255,255,.06); }
+        .btn-logout { display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border-radius:10px; color:rgba(239,68,68,.7); font-size:13.5px; font-weight:500; text-decoration:none; transition:all .18s ease; background:none; border:none; cursor:pointer; }
+        .btn-logout:hover { background:rgba(239,68,68,.08); color:rgb(239,68,68); }
+
+        /* ══ MAIN ══ */
+        .main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+        .top-header { height:var(--header-h); background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; flex-shrink:0; z-index:30; }
+        .page-title-block h1 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--text-primary); }
+        .page-title-block p { font-size:12px; color:var(--text-muted); }
+        .header-right { display:flex; align-items:center; gap:10px; }
+        .search-wrap { position:relative; }
+        .search-wrap input { width:240px; padding:8px 14px 8px 38px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-family:'DM Sans',sans-serif; background:var(--surface-2); color:var(--text-primary); outline:none; transition:border-color .18s; }
+        .search-wrap input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(249,115,22,.1); background:var(--surface); }
+        .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
+        .btn-filter { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--text-sec); cursor:pointer; transition:all .18s; }
+        .btn-filter:hover { border-color:var(--orange); color:var(--orange); }
+        .btn-filter.active { border-color:var(--orange); color:var(--orange); background:rgba(249,115,22,.08); }
+        .btn-export { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:10px; background:linear-gradient(135deg,#10b981,#059669); color:white; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all .2s; box-shadow:0 3px 12px rgba(16,185,129,.25); }
+        .btn-export:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,.35); }
+
+        .content-area { flex:1; overflow-y:auto; padding:24px 28px; scrollbar-width:thin; }
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 20px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 8px rgba(0,0,0,.03); }
+        .stat-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .stat-icon.create  { background:#dcfce7; } .stat-icon.update  { background:#dbeafe; } .stat-icon.delete  { background:#fee2e2; } .stat-icon.total   { background:rgba(249,115,22,.1); }
+        .stat-val { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--text-primary); }
+        .stat-lbl { font-size:11px; color:var(--text-muted); font-weight:500; }
+
+        .table-card { background:var(--surface); border-radius:16px; border:1px solid var(--border); overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,.04); }
+        .table-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); }
+        .table-card-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+        .table-count { font-size:11px; font-weight:600; color:var(--orange); background:rgba(249,115,22,.08); border:1px solid rgba(249,115,22,.2); padding:2px 9px; border-radius:6px; }
+        .filter-badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600; background:rgba(249,115,22,.08); color:var(--orange); border:1px solid rgba(249,115,22,.2); }
+        .filter-badge button { background:none; border:none; cursor:pointer; color:var(--orange); font-size:12px; }
+
+        table { width:100%; border-collapse:collapse; }
+        thead tr { background:var(--surface-2); border-bottom:1px solid var(--border); }
+        thead th { padding:11px 18px; text-align:left; font-family:'Syne',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); }
+        tbody tr { border-bottom:1px solid #f3f4f6; transition:background .13s; }
+        tbody tr:hover { background:#fafafa; }
+        tbody td { padding:12px 18px; font-size:13px; color:var(--text-primary); vertical-align:middle; }
+
+        .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:700; }
+        .badge-create { background:#dcfce7; color:#15803d; } .badge-update { background:#dbeafe; color:#1d4ed8; } .badge-delete { background:#fee2e2; color:#b91c1c; } .badge-other  { background:#f3f4f6; color:#374151; }
+
+        /* ══ PAGINATION ══ */
+        .pagination { display:flex; align-items:center; justify-content:center; gap:4px; padding:14px 0 6px; }
+        .page-btn { width:34px; height:34px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text-sec); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+        .page-btn:hover:not(.active):not(:disabled) { border-color:var(--orange); color:var(--orange); background:rgba(249,115,22,.05); }
+        .page-btn.active { background:var(--orange); color:white; border-color:var(--orange); font-weight:700; }
+        .page-btn:disabled { opacity:.35; cursor:not-allowed; }
+        .page-info { font-size:12px; color:var(--text-muted); margin:0 8px; }
+
+        /* ══ FILTER DROPDOWN ══ */
+        .filter-dropdown { position:fixed; z-index:60; background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.12); width:220px; overflow:hidden; animation:dropIn .18s ease both; }
+        @keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        .filter-dropdown-header { padding:12px 16px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); border-bottom:1px solid var(--border); }
+        .filter-item { display:flex; align-items:center; gap:10px; width:100%; padding:10px 16px; text-align:left; background:none; border:none; cursor:pointer; font-size:13px; font-family:'DM Sans',sans-serif; color:var(--text-primary); transition:background .13s; }
+        .filter-item:hover { background:var(--surface-2); }
+        .filter-item.selected { background:rgba(249,115,22,.06); color:var(--orange); font-weight:600; }
+        .filter-item-icon { font-size:16px; width:22px; flex-shrink:0; }
+
+        #sidebarOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; backdrop-filter:blur(2px); }
+        .mobile-menu-btn { display:none; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px; background:var(--surface-2); border:1.5px solid var(--border); cursor:pointer; }
+
+        @keyframes fadeSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .animate-in { animation:fadeSlideIn .35s ease both; }
+        .anim-d1 { animation-delay:.06s; } .anim-d2 { animation-delay:.12s; }
+
+        @media (max-width:768px) {
+            #sidebar { position:fixed; top:0; left:0; transform:translateX(-100%); }
+            #sidebar.open { transform:translateX(0); }
+            #sidebarOverlay.open { display:block; }
+            .mobile-menu-btn { display:flex; }
+            body { overflow:auto; }
+            .main-area { height:100vh; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .search-wrap input { width:160px; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
 
-    <!-- Header -->
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <button onclick="openSidebar()" 
-                    class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                <span>Menu</span>
-            </button>
+<body>
+<aside id="sidebar">
+    <div class="sidebar-logo"><img src="{{ url_for('static', filename='logo.png') }}" alt="Outsourcia"></div>
+    <div class="sidebar-user"><div class="sidebar-user-avatar">{{ user.prenom[0] }}{{ user.nom[0] }}</div><div><div class="sidebar-user-name">{{ user.nom }} {{ user.prenom }}</div><div class="sidebar-user-role">{{ user.role|capitalize }}</div></div></div>
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Tableau de bord</a>
+        <div class="nav-section-label">Administration</div>
+        <a href="{{ url_for('gestion_utilisateurs') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Utilisateurs</a>
+        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>Donneurs d'Ordre</a>
+        <a href="{{ url_for('gestion_campagnes') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>Campagnes</a>
+        <a href="{{ url_for('gestion_npv') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>NPV</a>
+        <a href="{{ url_for('gestion_operateurs') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Opérateurs</a>
+        <div class="nav-section-label">Facturation</div>
+        <a href="{{ url_for('gestion_factures') }}" class="nav-item"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Factures</a>
+        <div class="nav-section-label">Audit</div>
+        <a href="{{ url_for('historique') }}" class="nav-item active"><svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Historique</a>
+    </nav>
+    <div class="sidebar-footer"><a href="{{ url_for('logout') }}" class="btn-logout"><svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Déconnexion</a></div>
+</aside>
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-            <h1 class="text-2xl font-bold text-gray-900">Historique des Actions</h1>
-
-            <div class="flex items-center gap-3">
-                <!-- Bouton Filtrer -->
-                <button onclick="toggleFilterDropdown()" 
-                        class="flex items-center gap-2 bg-white border border-gray-300 hover:border-orange-500 px-5 py-3 rounded-2xl font-medium transition">
-                    
-                    <span>Filtrer</span>
-                </button>
-
-                <!-- Bouton Exporter -->
-                <button onclick="exportHistorique()" 
-                        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-medium transition">
-                    
-                    <span>Exporter CSV</span>
-                </button>
+<div class="main-area">
+    <header class="top-header animate-in">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <button class="mobile-menu-btn" onclick="openSidebar()"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+            <div class="page-title-block"><h1>Historique des <span style="color:var(--orange)">Actions</span></h1><p>Traçabilité complète de toutes les opérations</p></div>
+        </div>
+        <div class="header-right">
+            <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher…">
             </div>
+            <div style="position:relative;">
+                <button class="btn-filter" id="filterBtn" onclick="toggleFilterDropdown()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+                    Filtrer
+                </button>
+                <div id="filterDropdown" style="display:none;" class="filter-dropdown">
+                    <div class="filter-dropdown-header">Filtrer par entité</div>
+                    <button class="filter-item selected" onclick="filterByEntity('all')" data-entity="all"><span class="filter-item-icon">📋</span> Toutes les entités</button>
+                    <button class="filter-item" onclick="filterByEntity('Utilisateur')" data-entity="Utilisateur"><span class="filter-item-icon">👤</span> Utilisateur</button>
+                    <button class="filter-item" onclick="filterByEntity('Campagne')" data-entity="Campagne"><span class="filter-item-icon">📣</span> Campagne</button>
+                    <button class="filter-item" onclick="filterByEntity('NPV')" data-entity="NPV"><span class="filter-item-icon">📞</span> NPV</button>
+                    <button class="filter-item" onclick="filterByEntity('Do')" data-entity="DO"><span class="filter-item-icon">🏢</span> Donneur d'Ordre</button>
+                    <button class="filter-item" onclick="filterByEntity('Operateur')" data-entity="Operateur"><span class="filter-item-icon">📡</span> Opérateur</button>
+                </div>
+            </div>
+            <button class="btn-export" onclick="exportHistorique()"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Exporter CSV</button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8">
-        <div class="mb-6">
-            <input type="text" id="searchInput" 
-                   onkeyup="searchTable()" 
-                   placeholder="Rechercher dans l'historique..." 
-                   class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:border-orange-500">
+    <div class="content-area">
+        <div class="stats-row animate-in anim-d1">
+            <div class="stat-card"><div class="stat-icon total">📋</div><div><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Total actions</div></div></div>
+            <div class="stat-card"><div class="stat-icon create">✅</div><div><div class="stat-val" id="statCreate">0</div><div class="stat-lbl">Créations</div></div></div>
+            <div class="stat-card"><div class="stat-icon update">✏️</div><div><div class="stat-val" id="statUpdate">0</div><div class="stat-lbl">Modifications</div></div></div>
+            <div class="stat-card"><div class="stat-icon delete">🗑️</div><div><div class="stat-val" id="statDelete">0</div><div class="stat-lbl">Suppressions</div></div></div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Date</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Utilisateur</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Action</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Entité</th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500">Détails</th>
-                    </tr>
-                </thead>
-                <tbody id="historiqueTable" class="divide-y divide-gray-200">
-                    {% for h in historiques %}
-                    <tr class="hover:bg-orange-50 transition" data-entite="{{ h.entite }}">
-                        <td class="px-6 py-4 text-sm text-gray-600">
-                            {{ h.date_action.strftime('%d/%m/%Y %H:%M:%S') if h.date_action else '—' }}
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium">
-                            {{ h.user.nom }} {{ h.user.prenom }}
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="px-3 py-1 text-xs font-semibold rounded-full
-                                {% if h.action == 'CREATE' %}bg-green-100 text-green-700{% elif h.action == 'UPDATE' %}bg-blue-100 text-blue-700{% elif h.action == 'DELETE' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ h.action }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-700 font-medium">{{ h.entite }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ h.details or '—' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="px-6 py-16 text-center text-gray-500">
-                            Aucun enregistrement dans l'historique pour le moment.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <!-- Dropdown Filtre -->
-    <div id="filterDropdown" class="hidden fixed top-20 right-10 bg-white shadow-xl rounded-2xl border border-gray-200 w-64 py-2 z-50">
-        <div class="px-4 py-3 text-sm font-medium text-gray-500 border-b">Filtrer par Entité</div>
-        <button onclick="filterByEntity('all')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            📋 Toutes les entités
-        </button>
-        <button onclick="filterByEntity('Utilisateur')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            👤 Utilisateur
-        </button>
-        <button onclick="filterByEntity('Campagne')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            📣 Campagne
-        </button>
-        <button onclick="filterByEntity('NPV')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            📞 NPV
-        </button>
-        <button onclick="filterByEntity('DO')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            🏢 DO (Donneur d'Ordre)
-        </button>
-        <button onclick="filterByEntity('Operateur')" class="w-full text-left px-6 py-3 hover:bg-orange-50 flex items-center gap-3">
-            📡 Opérateur
-        </button>
-    </div>
-
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
-        <!-- ... ton sidebar actuel ... -->
-        <div class="p-5 flex justify-between items-center border-b">
-            <div class="flex items-center">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
-                <h2 class="text-xl font-bold text-gray-900">Menu</h2>
+        <div class="table-card animate-in anim-d2">
+            <div class="table-card-header">
+                <div class="table-card-title">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--orange)" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Journal d'audit <span class="table-count" id="rowCount"></span>
+                </div>
+                <div id="activeFilterDisplay" style="display:none;">
+                    <span class="filter-badge"><span id="activeFilterText"></span><button onclick="filterByEntity('all')">✕</button></span>
+                </div>
             </div>
-            <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
+
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Entité</th><th>Détails</th></tr></thead>
+                    <tbody id="historiqueTableBody">
+                        {% for h in historiques %}
+                        <tr data-entite="{{ h.entite }}" data-action="{{ h.action }}">
+                            <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-sec)">{{ h.date_action.strftime('%d/%m/%Y %H:%M:%S') if h.date_action else '—' }}</span></td>
+                            <td style="font-weight:600">{{ h.user.nom }} {{ h.user.prenom }}</td>
+                            <td>
+                                {% if h.action == 'CREATE' %}<span class="badge badge-create"><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M12 4v16m8-8H4"/></svg>CREATE</span>
+                                {% elif h.action == 'UPDATE' %}<span class="badge badge-update"><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>UPDATE</span>
+                                {% elif h.action == 'DELETE' %}<span class="badge badge-delete"><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>DELETE</span>
+                                {% else %}<span class="badge badge-other">{{ h.action }}</span>{% endif %}
+                            </td>
+                            <td style="font-weight:600;font-size:12.5px">{{ h.entite }}</td>
+                            <td style="color:var(--text-sec);font-size:12.5px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ h.details or '' }}">{{ h.details or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- ══ PAGINATION ══ -->
+            <div class="pagination" id="paginationContainer"></div>
         </div>
+    </div>
+</div>
 
-        <nav class="p-5 space-y-1">
-            <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
-            <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
-            <a href="{{ url_for('gestion_donneurs_ordre') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des DO</a>
-            <a href="{{ url_for('gestion_campagnes') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des campagnes</a>
-            <a href="{{ url_for('gestion_npv') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des NPV</a>
-            <a href="{{ url_for('gestion_operateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des opérateurs</a>
-            <a href="{{ url_for('historique') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition bg-orange-50 text-primary">Historique global des actions</a>
-        </nav>
-    </aside>
+<script>
+    function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebarOverlay').classList.add('open');}
+    function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
-    <script>
-        // Recherche texte
-        function searchTable() {
-            const input = document.getElementById("searchInput").value.toLowerCase();
-            const rows = document.querySelectorAll("#historiqueTable tr");
-            rows.forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
-            });
-        }
+    const LPP=10; let pa=1, tp=1, activeFilter='all';
 
-        // Filtrage par entité (version améliorée et plus robuste)
-function filterByEntity(entity) {
-    const rows = document.querySelectorAll("#historiqueTable tr");
-
-    rows.forEach(row => {
-        if (entity === 'all') {
-            row.style.display = "";
-            return;
-        }
-
-        const entiteDansTable = (row.getAttribute('data-entite') || '').toLowerCase().trim();
-        const entiteRecherchee = entity.toLowerCase().trim();
-
-        // Normalisation pour matcher "DO", "DonneurdOrdre", "Donneur d'Ordre", etc.
-        const match = 
-            entiteDansTable === entiteRecherchee ||
-            entiteDansTable.includes(entiteRecherchee) ||
-            entiteRecherchee.includes(entiteDansTable) ||
-            (entiteRecherchee === 'do' && (entiteDansTable.includes('donneur') || entiteDansTable.includes('do')));
-
-        row.style.display = match ? "" : "none";
-    });
-
-    document.getElementById('filterDropdown').classList.add('hidden');
-}
-
-        function toggleFilterDropdown() {
-            document.getElementById('filterDropdown').classList.toggle('hidden');
-        }
-
-        // ===================== EXPORT CSV (version améliorée) =====================
-function exportHistorique() {
-    const rows = document.querySelectorAll("#historiqueTable tr");
-    let csvContent = "Date,Utilisateur,Action,Entité,Détails\r\n";   // virgule comme délimiteur
-
-    rows.forEach(row => {
-        if (row.style.display !== "none" && row.cells.length > 1) {
-            const date = row.cells[0].innerText.trim().replace(/"/g, '""');
-            const user = row.cells[1].innerText.trim().replace(/"/g, '""');
-            const action = row.cells[2].innerText.trim().replace(/"/g, '""');
-            const entite = row.cells[3].innerText.trim().replace(/"/g, '""');
-            const details = row.cells[4].innerText.trim().replace(/"/g, '""');
-
-            csvContent += `"${date}","${user}","${action}","${entite}","${details}"\r\n`;
-        }
-    });
-
-    // Création du nom de fichier avec date et heure actuelle
-    const now = new Date();
-    const dateStr = now.getFullYear().toString() +
-                    String(now.getMonth() + 1).padStart(2, '0') +
-                    String(now.getDate()).padStart(2, '0') + "_" +
-                    String(now.getHours()).padStart(2, '0') +
-                    String(now.getMinutes()).padStart(2, '0') +
-                    String(now.getSeconds()).padStart(2, '0');
-
-    const filename = `historique_${dateStr}.csv`;
-
-    // Encodage latin-1 + BOM pour Excel
-    const blob = new Blob(["\uFEFF" + csvContent], { 
-        type: 'text/csv;charset=latin1;' 
-    });
-
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-        // Sidebar functions
-        function openSidebar() {
-            document.getElementById('sidebar').classList.remove('-translate-x-full');
-            document.getElementById('sidebar').classList.add('translate-x-0');
-        }
-
-        function closeSidebar() {
-            document.getElementById('sidebar').classList.remove('translate-x-0');
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-        }
-
-        // Fermer dropdown et sidebar en cliquant dehors
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const menuButton = document.querySelector('button[onclick="openSidebar()"]');
-            const filterDropdown = document.getElementById('filterDropdown');
-
-            if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) {
-                closeSidebar();
+    function getLignesVisibles(){
+        const st=document.getElementById('searchInput').value.toLowerCase();
+        const lignes=[];
+        document.querySelectorAll('#historiqueTableBody tr').forEach(row=>{
+            let v=true;
+            if(activeFilter!=='all'){
+                const e=(row.getAttribute('data-entite')||'').toLowerCase().trim();
+                const t=activeFilter.toLowerCase().trim();
+                if(t==='do'){ if(!e.includes('donneur')&&!e.includes('do'))v=false; }
+                else if(e!==t&&!e.includes(t)&&!t.includes(e))v=false;
             }
-            if (!event.target.closest('button[onclick="toggleFilterDropdown()"]') && 
-                !filterDropdown.contains(event.target)) {
-                filterDropdown.classList.add('hidden');
-            }
+            if(st&&!row.textContent.toLowerCase().includes(st))v=false;
+            row.style.display='none';
+            if(v)lignes.push(row);
         });
-    </script>
+        return lignes;
+    }
+
+    function affiche(){
+        const lignes=getLignesVisibles(); tp=Math.ceil(lignes.length/LPP)||1; if(pa>tp)pa=tp;
+        const d=(pa-1)*LPP, f=d+LPP;
+        lignes.forEach((row,i)=>{row.style.display=(i>=d&&i<f)?'':'none';});
+        document.getElementById('rowCount').textContent=lignes.length;
+        computeStats(lignes);
+        renderPagination();
+    }
+
+    function searchTable(){pa=1;affiche();}
+    function filterByEntity(entity){
+        activeFilter=entity; pa=1; affiche();
+        document.querySelectorAll('.filter-item').forEach(b=>b.classList.toggle('selected',b.dataset.entity===entity));
+        const disp=document.getElementById('activeFilterDisplay'),txt=document.getElementById('activeFilterText'),btn=document.getElementById('filterBtn');
+        if(entity!=='all'){disp.style.display='block';txt.textContent=entity==='DO'?"Donneur d'Ordre":entity;btn.classList.add('active');}
+        else{disp.style.display='none';btn.classList.remove('active');}
+        closeFilterDropdown();
+    }
+
+    function computeStats(lignes){
+        let total=0,create=0,update=0,del=0;
+        lignes.forEach(row=>{
+            const action=row.getAttribute('data-action')||'';
+            total++;
+            if(action==='CREATE')create++;else if(action==='UPDATE')update++;else if(action==='DELETE')del++;
+        });
+        document.getElementById('statTotal').textContent=total;
+        document.getElementById('statCreate').textContent=create;
+        document.getElementById('statUpdate').textContent=update;
+        document.getElementById('statDelete').textContent=del;
+    }
+
+    function renderPagination(){
+        const c=document.getElementById('paginationContainer');c.innerHTML='';if(tp<=1)return;
+        const mkb=(txt,cls,dis,fn)=>{const b=document.createElement('button');b.className='page-btn'+(cls||'');b.innerHTML=txt;b.disabled=dis;b.onclick=fn;return b;};
+        c.appendChild(mkb('‹','',pa===1,()=>{if(pa>1){pa--;affiche();}}));
+        const mb=5;let sp=Math.max(1,pa-Math.floor(mb/2)),ep=Math.min(tp,sp+mb-1);
+        if(ep-sp<mb-1)sp=Math.max(1,ep-mb+1);
+        if(sp>1){c.appendChild(mkb('1','',false,()=>{pa=1;affiche();}));if(sp>2){const d=document.createElement('span');d.className='page-info';d.textContent='…';c.appendChild(d);}}
+        for(let i=sp;i<=ep;i++)c.appendChild(mkb(i,i===pa?' active':'',false,()=>{pa=i;affiche();}));
+        if(ep<tp){if(ep<tp-1){const d=document.createElement('span');d.className='page-info';d.textContent='…';c.appendChild(d);}c.appendChild(mkb(tp,'',false,()=>{pa=tp;affiche();}));}
+        c.appendChild(mkb('›','',pa===tp,()=>{if(pa<tp){pa++;affiche();}}));
+        const info=document.createElement('span');info.className='page-info';info.textContent=`Page ${pa}/${tp}`;c.appendChild(info);
+    }
+
+    function toggleFilterDropdown(){
+        const dd=document.getElementById('filterDropdown'),btn=document.getElementById('filterBtn'),r=btn.getBoundingClientRect();
+        dd.style.display=dd.style.display==='none'?'block':'none';
+        dd.style.top=(r.bottom+window.scrollY+6)+'px';dd.style.right=(window.innerWidth-r.right)+'px';
+    }
+    function closeFilterDropdown(){document.getElementById('filterDropdown').style.display='none';}
+
+    function exportHistorique(){
+        const lignes=getLignesVisibles();
+        let csv="Date,Utilisateur,Action,Entité,Détails\r\n";
+        lignes.forEach(row=>{
+            const c=row.cells;
+            csv+=`"${c[0].innerText.trim()}","${c[1].innerText.trim()}","${c[2].innerText.trim()}","${c[3].innerText.trim()}","${c[4].innerText.trim()}"\r\n`;
+        });
+        const ts=new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+        const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`historique_${ts}.csv`;
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }
+
+    document.addEventListener('click',function(e){const dd=document.getElementById('filterDropdown'),btn=document.getElementById('filterBtn');if(!btn.contains(e.target)&&!dd.contains(e.target))dd.style.display='none';});
+    document.addEventListener('DOMContentLoaded',affiche);
+</script>
 </body>
 </html>

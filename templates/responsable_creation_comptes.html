@@ -3,92 +3,691 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Création de comptes (Managers) - Responsable Plateau</title>
+    <title>Création de comptes Managers – Outsourcia</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: '#f97316',
-              primaryDark: '#c2410c',
-            }
-          }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --orange:       #f97316;
+            --orange-dark:  #ea580c;
+            --sidebar-bg:  linear-gradient(180deg, #1e3a8a, #172554);
+            --sidebar-w:    260px;
+            --header-h:     64px;
+            --surface:      #ffffff;
+            --surface-2:    #f8f9fb;
+            --border:       #e8eaee;
+            --text-primary: #0f1117;
+            --text-sec:     #6b7280;
+            --text-muted:   #9ca3af;
         }
-      }
-    </script>
+
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            font-family:'DM Sans',sans-serif;
+            background:var(--surface-2);
+            color:var(--text-primary);
+            height:100vh; overflow:hidden; display:flex;
+        }
+
+        /* ══ SIDEBAR ══════════════════════════════════════ */
+        #sidebar {
+            width:var(--sidebar-w); height:100vh;
+            background:var(--sidebar-bg);
+            display:flex; flex-direction:column;
+            flex-shrink:0; position:relative; z-index:50;
+            transition:transform .3s cubic-bezier(.4,0,.2,1); overflow:hidden;
+        }
+        #sidebar::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.08) 0%,transparent 60%);
+            pointer-events:none;
+        }
+        #sidebar::after {
+            content:''; position:absolute; top:0; right:0;
+            width:1px; height:100%;
+            background:linear-gradient(to bottom,transparent,rgba(249,115,22,.3) 40%,transparent);
+        }
+        .sidebar-logo { padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,.06); }
+        .sidebar-logo img { height:36px; filter:none; opacity:1; }
+
+        .sidebar-user {
+            padding:8px 10px; margin:6px 10px;
+            background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+            border-radius:12px; display:flex; align-items:center; gap:10px;
+        }
+        .sidebar-user-avatar {
+            width:34px; height:34px;
+            background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+            font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:white; flex-shrink:0;
+        }
+        .sidebar-user-name { font-size:13px; font-weight:600; color:rgba(255,255,255,.9); line-height:1.2; }
+        .sidebar-user-role { font-size:11px; color:var(--orange); font-weight:500; letter-spacing:.03em; }
+
+        .sidebar-nav { flex:1; overflow-y:auto; padding:8px 12px 12px; scrollbar-width:none; }
+        .sidebar-nav::-webkit-scrollbar { display:none; }
+        .nav-section-label {
+            font-size:9px; font-weight:700; letter-spacing:.12em;
+            text-transform:uppercase; color:rgba(255,255,255,.25); padding:10px 10px 4px;
+        }
+        .nav-item {
+            display:flex; align-items:center; gap:10px;
+            padding:6px 10px; border-radius:10px;
+            color:rgba(255,255,255,.55); font-size:12px; font-weight:500;
+            text-decoration:none; transition:all .18s ease;
+            position:relative; cursor:pointer; margin-bottom:2px;
+        }
+        .nav-item:hover { background:rgba(255,255,255,.06); color:rgba(255,255,255,.9); }
+        .nav-item.active { background:rgba(249,115,22,.15); color:var(--orange); }
+        .nav-item.active::before {
+            content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+            width:3px; height:60%; background:var(--orange); border-radius:0 3px 3px 0;
+        }
+        .nav-icon { width:18px; height:18px; flex-shrink:0; opacity:.7; }
+        .nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity:1; }
+
+        .sidebar-footer { padding:10px 10px; border-top:1px solid rgba(255,255,255,.06); }
+        .btn-logout {
+            display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px;
+            border-radius:10px; color:rgba(239,68,68,.7); font-size:13.5px; font-weight:500;
+            text-decoration:none; transition:all .18s ease; background:none; border:none; cursor:pointer;
+        }
+        .btn-logout:hover { background:rgba(239,68,68,.08); color:rgb(239,68,68); }
+
+        /* ══ MAIN ═════════════════════════════════════════ */
+        .main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+        .top-header {
+            height:var(--header-h); background:var(--surface);
+            border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 28px; flex-shrink:0; z-index:30;
+        }
+        .page-title-block h1 {
+            font-family:'Syne',sans-serif; font-size:18px; font-weight:700;
+            color:var(--text-primary); line-height:1.2;
+        }
+        .page-title-block p { font-size:12px; color:var(--text-muted); margin-top:1px; }
+
+        .btn-back {
+            display:flex; align-items:center; gap:7px;
+            padding:8px 16px; border-radius:10px;
+            border:1.5px solid var(--border); background:var(--surface);
+            font-size:13px; font-weight:600; color:var(--text-sec);
+            cursor:pointer; transition:all .18s; text-decoration:none;
+        }
+        .btn-back:hover { border-color:var(--orange); color:var(--orange); }
+
+        /* ══ CONTENT ══════════════════════════════════════ */
+        .content-area {
+            flex:1; overflow-y:auto; padding:28px 32px;
+            scrollbar-width:thin; scrollbar-color:#e0e0e0 transparent;
+        }
+
+        .layout-grid {
+            display:grid;
+            grid-template-columns:1fr 420px;
+            gap:24px;
+            align-items:start;
+        }
+
+        /* Flash messages */
+        .flash-msg {
+            display:flex; align-items:center; gap:10px;
+            padding:14px 18px; border-radius:12px; font-size:13px; font-weight:500;
+            margin-bottom:20px;
+            animation:fadeSlide .4s ease both, fadeOut 5s 1s forwards;
+        }
+        .flash-success { background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; }
+        .flash-warning { background:#fffbeb; border:1px solid #fde68a; color:#92400e; }
+        .flash-error   { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
+        @keyframes fadeSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeOut { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0;pointer-events:none} }
+
+        /* ══ FORM CARD ════════════════════════════════════ */
+        .form-card {
+            background:var(--surface); border-radius:20px;
+            border:1px solid var(--border);
+            box-shadow:0 2px 20px rgba(0,0,0,.04);
+            overflow:hidden;
+        }
+        .form-card-header {
+            padding:22px 28px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:12px;
+        }
+        .form-card-icon {
+            width:40px; height:40px; border-radius:12px;
+            background:rgba(249,115,22,.1);
+            display:flex; align-items:center; justify-content:center;
+        }
+        .form-card-title {
+            font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--text-primary);
+        }
+        .form-card-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
+        .form-card-body { padding:28px; }
+
+        .field-group { margin-bottom:18px; }
+        .field-label {
+            display:block; font-size:12px; font-weight:600;
+            color:var(--text-sec); margin-bottom:7px; letter-spacing:.02em;
+        }
+        .field-label .req { color:var(--orange); }
+        .field-input {
+            width:100%; padding:10px 14px;
+            border:1.5px solid var(--border); border-radius:10px;
+            font-size:13.5px; font-family:'DM Sans',sans-serif;
+            color:var(--text-primary); background:var(--surface);
+            outline:none; transition:border-color .18s, box-shadow .18s;
+        }
+        .field-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(249,115,22,.1); }
+        .field-input::placeholder { color:var(--text-muted); font-size:13px; }
+
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+        /* Password eye */
+        .pass-wrap { position:relative; }
+        .pass-eye {
+            position:absolute; right:12px; top:50%; transform:translateY(-50%);
+            background:none; border:none; cursor:pointer;
+            font-size:17px; color:var(--text-muted); transition:color .15s; padding:2px;
+        }
+        .pass-eye:hover { color:var(--text-primary); }
+
+        /* DO info banner */
+        .do-banner {
+            display:flex; align-items:flex-start; gap:12px;
+            padding:14px 18px; border-radius:12px;
+            background:rgba(249,115,22,.06);
+            border:1.5px solid rgba(249,115,22,.2);
+            margin-bottom:20px;
+        }
+        .do-banner-icon {
+            width:36px; height:36px; border-radius:10px;
+            background:rgba(249,115,22,.12);
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; flex-shrink:0;
+        }
+        .do-banner-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+        .do-banner-value { font-size:14px; font-weight:700; color:var(--orange-dark); margin-top:4px; }
+
+        /* Role badge fixed */
+        .role-fixed {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:8px 14px; border-radius:10px;
+            background:#dbeafe; color:#1d4ed8;
+            font-size:13px; font-weight:700;
+            border:1.5px solid #bfdbfe; width:100%;
+        }
+
+        .btn-submit {
+            width:100%; padding:13px; border-radius:12px;
+            font-size:14px; font-weight:700; color:white;
+            background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+            border:none; cursor:pointer; transition:all .2s;
+            box-shadow:0 4px 16px rgba(249,115,22,.3);
+            display:flex; align-items:center; justify-content:center; gap:8px;
+        }
+        .btn-submit:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(249,115,22,.4); }
+        .btn-submit:active { transform:translateY(0); }
+
+        .form-note {
+            margin-top:16px; padding:12px 16px;
+            background:var(--surface-2); border-radius:10px;
+            font-size:12px; color:var(--text-muted);
+            display:flex; align-items:flex-start; gap:8px; line-height:1.5;
+        }
+
+        /* ══ MANAGERS LIST CARD ═══════════════════════════ */
+        .list-card {
+            background:var(--surface); border-radius:20px;
+            border:1px solid var(--border);
+            box-shadow:0 2px 20px rgba(0,0,0,.04);
+            overflow:hidden;
+        }
+        .list-card-header {
+            padding:18px 24px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .list-card-title {
+            font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text-primary);
+            display:flex; align-items:center; gap:8px;
+        }
+        .list-count {
+            font-size:11px; font-weight:600; color:var(--orange);
+            background:rgba(249,115,22,.08); border:1px solid rgba(249,115,22,.2);
+            padding:2px 9px; border-radius:6px;
+        }
+        .manager-list { max-height:460px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#e0e0e0 transparent; }
+
+        .manager-item {
+            display:flex; align-items:center; gap:14px;
+            padding:14px 20px; border-bottom:1px solid #f3f4f6;
+            transition:background .13s;
+        }
+        .manager-item:last-child { border-bottom:none; }
+        .manager-item:hover { background:#fafafa; }
+
+        .manager-avatar {
+            width:36px; height:36px; border-radius:10px;
+            background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Syne',sans-serif; font-weight:800; font-size:13px; color:#1d4ed8;
+            flex-shrink:0;
+        }
+        .manager-name { font-size:13px; font-weight:600; color:var(--text-primary); }
+        .manager-email { font-size:12px; color:var(--text-muted); margin-top:1px; font-family:'DM Mono',monospace; }
+
+        .badge-manager {
+            display:inline-flex; align-items:center;
+            padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700;
+            background:#dbeafe; color:#1d4ed8; margin-left:auto; flex-shrink:0;
+        }
+        
+        /* DO badges dans la liste */
+        .do-badge-list {
+            display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;
+        }
+        .do-badge-item {
+            display:inline-block;
+            background:rgba(249,115,22,.08);
+            color:var(--orange-dark);
+            padding:2px 7px; border-radius:5px;
+            font-size:10px; font-weight:600;
+        }
+
+        .empty-list {
+            padding:40px 24px; text-align:center;
+        }
+        .empty-list .empty-icon { font-size:36px; margin-bottom:10px; }
+        .empty-list p { font-size:13px; color:var(--text-muted); }
+
+        /* Mobile */
+        #sidebarOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; backdrop-filter:blur(2px); }
+        .mobile-menu-btn {
+            display:none; align-items:center; justify-content:center;
+            width:36px; height:36px; border-radius:10px;
+            background:var(--surface-2); border:1.5px solid var(--border); cursor:pointer;
+        }
+        @media (max-width:900px) {
+            .layout-grid { grid-template-columns:1fr; }
+        }
+        @media (max-width:768px) {
+            #sidebar { position:fixed; top:0; left:0; transform:translateX(-100%); }
+            #sidebar.open { transform:translateX(0); }
+            #sidebarOverlay.open { display:block; }
+            .mobile-menu-btn { display:flex; }
+            body { overflow:auto; }
+            .main-area { height:100vh; }
+            .grid-2 { grid-template-columns:1fr; }
+        }
+
+        @keyframes fadeSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .animate-in { animation:fadeSlideIn .35s ease both; }
+        .anim-d1 { animation-delay:.06s; }
+        .anim-d2 { animation-delay:.12s; }
+        
+        /* DO checkbox list */
+        .do-item {
+            display:flex; align-items:center; gap:10px;
+            padding:8px 10px; border-radius:8px;
+            cursor:pointer; transition:background .15s;
+        }
+        .do-item:hover { background:#fff7ed; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-10 mr-3">
-                <h1 class="text-2xl font-bold text-gray-900">Création de comptes Managers</h1>
-            </div>
-            <div class="flex items-center space-x-6">
-                <a href="{{ url_for('responsable_dashboard') }}" class="text-primary hover:text-primaryDark font-medium">
-                    ← Retour au dashboard
-                </a>
-                <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 font-medium">Déconnexion</a>
+
+<body>
+<!-- ══ SIDEBAR ═══════════════════════════════════════════ -->
+<aside id="sidebar">
+    <div class="sidebar-logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Outsourcia">
+    </div>
+
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+            {{ current_user.prenom[0] }}{{ current_user.nom[0] }}
+        </div>
+        <div>
+            <div class="sidebar-user-name">{{ current_user.prenom }} {{ current_user.nom }}</div>
+            <div class="sidebar-user-role">Responsable Plateau</div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="{{ url_for('responsable_dashboard') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Tableau de bord
+        </a>
+
+        <div class="nav-section-label">Gestion</div>
+        <a href="{{ url_for('responsable_creation_comptes') }}" class="nav-item active">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+            </svg>
+            Gérer les managers
+        </a>
+
+        <div class="nav-section-label">Facturation</div>
+        <a href="{{ url_for('responsable_planificateur_factures') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Planifier les factures
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="btn-logout">
+            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Déconnexion
+        </a>
+    </div>
+</aside>
+
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══ MAIN AREA ══════════════════════════════════════════ -->
+<div class="main-area">
+
+    <!-- Header -->
+    <header class="top-header animate-in">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <button class="mobile-menu-btn" onclick="openSidebar()">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="page-title-block">
+                <h1>Création de comptes <span style="color:var(--orange)">Managers</span></h1>
+                <p>Créez et gérez les accès managers de vos DOs</p>
             </div>
         </div>
+        <a href="{{ url_for('responsable_dashboard') }}" class="btn-back">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Retour au dashboard
+        </a>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="bg-white shadow rounded-xl p-8">
-            <h2 class="text-2xl font-semibold text-gray-900 mb-8">Créer un compte Manager</h2>
+    <!-- Content -->
+    <div class="content-area">
 
-            <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                    <input type="text" name="nom" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                <div class="flash-msg flash-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'error' }}">
+                    <span>{{ '✅' if category == 'success' else '⚠️' if category == 'warning' else '❌' }}</span>
+                    <span>{{ msg }}</span>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="layout-grid">
+
+            <!-- ── Formulaire ─────────────────────────── -->
+            <div class="form-card animate-in anim-d1">
+                <div class="form-card-header">
+                    <div class="form-card-icon">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--orange)" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="form-card-title">Nouveau compte Manager</div>
+                        <div class="form-card-sub">Sélectionnez les DOs à affecter au manager</div>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                    <input type="text" name="prenom" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
+                <div class="form-card-body">
+
+                    <!-- Bannière DOs du responsable -->
+                    {% if mes_dos %}
+                    <div class="do-banner">
+                        <div class="do-banner-icon">🏢</div>
+                        <div>
+                            <div class="do-banner-label">Vos Donneurs d'Ordre (sélection multiple)</div>
+                            <div class="do-banner-value">
+                                {% for d in mes_dos %}
+                                    <span style="display:inline-block;background:rgba(249,115,22,.12);color:var(--orange-dark);padding:2px 8px;border-radius:6px;font-size:12px;margin:1px 2px;">{{ d.nom }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="createForm" onsubmit="return validateForm()">
+
+                        <div class="grid-2">
+                            <div class="field-group">
+                                <label class="field-label">Nom <span class="req">*</span></label>
+                                <input type="text" name="nom" id="nom" required class="field-input" placeholder="Ben Said">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Prénom <span class="req">*</span></label>
+                                <input type="text" name="prenom" id="prenom" required class="field-input" placeholder="Youssef">
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Email <span class="req">*</span></label>
+                            <input type="email" name="email" id="email" required class="field-input" placeholder="manager@domaine.com">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Téléphone <span class="req">*</span></label>
+                            <input type="tel" name="numtel" id="numtel" required class="field-input" placeholder="12345678"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11)">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Mot de passe <span class="req">*</span></label>
+                            <div class="pass-wrap">
+                                <input type="password" name="mot_de_passe" id="mot_de_passe" required
+                                       class="field-input" style="padding-right:44px" placeholder="••••••••">
+                                <button type="button" class="pass-eye" id="togglePass">👁</button>
+                            </div>
+                        </div>
+
+                        <!-- ══ SÉLECTION DES DOs ══ -->
+                        <div class="field-group" id="doSection">
+                            <label class="field-label">
+                                Donneurs d'Ordre <span class="req">*</span>
+                                <span style="font-weight:400;font-size:11px;color:var(--text-muted);">(sélectionnez au moins un DO)</span>
+                            </label>
+                            
+                            <input type="text" id="doSearch" placeholder="🔍 Filtrer les DOs..." 
+                                   oninput="filterDOs()"
+                                   class="field-input" style="font-size:12px;padding:8px 12px;margin-bottom:8px;">
+                            
+                            <div id="doCheckboxList" style="max-height:180px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;padding:8px;background:var(--surface);">
+                                {% for d in mes_dos %}
+                                <label class="do-item">
+                                    <input type="checkbox" name="do_ids" value="{{ d.id }}" 
+                                           class="do-checkbox" style="width:16px;height:16px;accent-color:#f97316;cursor:pointer;flex-shrink:0;"
+                                           onchange="updateDOCount()">
+                                    <span style="font-size:13px;color:#374151;flex:1;">{{ d.nom }}</span>
+                                    {% if d.email %}
+                                    <span style="font-size:11px;color:#9ca3af;">{{ d.email }}</span>
+                                    {% endif %}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            
+                            <p style="font-size:11px;color:var(--text-muted);margin-top:5px;">
+                                <span id="doCount" style="color:var(--orange);font-weight:700;">0</span> Donneur(s) d'Ordre sélectionné(s)
+                            </p>
+                            <p id="doError" style="display:none;color:#ef4444;font-size:12px;margin-top:4px;">
+                                ⚠️ Vous devez sélectionner au moins un Donneur d'Ordre.
+                            </p>
+                        </div>
+
+                        <!-- Rôle fixé -->
+                        <div class="field-group">
+                            <label class="field-label">Rôle (non modifiable)</label>
+                            <div class="role-fixed">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                Manager
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="role" value="manager">
+
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                            </svg>
+                            Créer le compte Manager
+                        </button>
+                    </form>
+
+                    <div class="form-note">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;color:var(--orange)">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>
+                            Un email de bienvenue avec les identifiants sera automatiquement envoyé au manager.
+                            Le compte sera affecté aux DOs que vous avez sélectionnés ci-dessus.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Liste des managers ──────────────────── -->
+            <div class="list-card animate-in anim-d2">
+                <div class="list-card-header">
+                    <div class="list-card-title">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--orange)" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Managers créés
+                        <span class="list-count">{{ managers|length }}</span>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                    <input type="tel" name="numtel" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
+                <div class="manager-list">
+                    {% if managers %}
+                        {% for m in managers %}
+                        <div class="manager-item">
+                            <div class="manager-avatar">
+                                {{ m.prenom[0] }}{{ m.nom[0] }}
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="manager-name">{{ m.prenom }} {{ m.nom }}</div>
+                                <div class="manager-email">{{ m.email }}</div>
+                                {% if m.donneurs.count() > 0 %}
+                                <div class="do-badge-list">
+                                    {% for d in m.donneurs.all() %}
+                                    <span class="do-badge-item">{{ d.nom }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="badge-manager">Manager</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-list">
+                        <div class="empty-icon">👥</div>
+                        <p>Aucun manager créé.<br>Créez votre premier compte ci-contre.</p>
+                    </div>
+                    {% endif %}
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                    <input type="text" name="adresse" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
-                </div>
+        </div><!-- /layout-grid -->
+    </div><!-- /content-area -->
+</div><!-- /main-area -->
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" name="email" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
-                </div>
+<script>
+    // ── Sidebar ───────────────────────────────────────────
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+    }
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                    <input type="password" name="mot_de_passe" required class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-primary focus:ring-primary">
-                </div>
+    // ── Password toggle ───────────────────────────────────
+    let passVisible = false;
+    document.getElementById('togglePass').addEventListener('click', function() {
+        const f = document.getElementById('mot_de_passe');
+        passVisible = !passVisible;
+        f.type = passVisible ? 'text' : 'password';
+        this.textContent = passVisible ? '🙈' : '👁';
+    });
 
-                <!-- Rôle forcé à manager (non modifiable) -->
-                <input type="hidden" name="role" value="manager">
+    // ── Filtrage des DOs ──────────────────────────────────
+    function filterDOs() {
+        const search = document.getElementById('doSearch').value.toLowerCase();
+        document.querySelectorAll('.do-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(search) ? 'flex' : 'none';
+        });
+    }
 
-                <div class="md:col-span-2 mt-8">
-                    <button type="submit" class="w-full bg-primary hover:bg-primaryDark text-white font-medium py-3.5 px-6 rounded-lg shadow-md hover:shadow-lg transition duration-200">
-                        Créer le compte Manager
-                    </button>
-                </div>
-            </form>
+    // ── Compteur de DOs ───────────────────────────────────
+    function updateDOCount() {
+        const count = document.querySelectorAll('.do-checkbox:checked').length;
+        document.getElementById('doCount').textContent = count;
+        document.getElementById('doError').style.display = count === 0 ? 'block' : 'none';
+    }
 
-            <p class="mt-10 text-center text-sm text-gray-500">
-                Seuls les comptes avec rôle <strong>Manager</strong> peuvent être créés depuis cet espace.
-            </p>
-        </div>
+    // ── Validation ────────────────────────────────────────
+    function validateForm() {
+        const nom    = document.getElementById('nom').value.trim();
+        const prenom = document.getElementById('prenom').value.trim();
+        const email  = document.getElementById('email').value.trim();
+        const numtel = document.getElementById('numtel').value.trim();
+        const mdp    = document.getElementById('mot_de_passe').value.trim();
+        
+        // Vérifier les DOs
+        const checkedDOs = document.querySelectorAll('.do-checkbox:checked').length;
+        if (checkedDOs === 0) {
+            alert('Vous devez sélectionner au moins un Donneur d\'Ordre.');
+            document.getElementById('doSearch').focus();
+            return false;
+        }
 
-        <p class="mt-8 text-center">
-            <a href="{{ url_for('responsable_dashboard') }}" class="text-primary hover:text-primaryDark font-medium">
-                ← Retour au dashboard
-            </a>
-        </p>
-    </main>
+        if (!nom || !prenom || !email || !numtel || !mdp) {
+            alert('Tous les champs sont obligatoires !');
+            return false;
+        }
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            alert('Veuillez entrer une adresse email valide.');
+            return false;
+        }
+        if (mdp.length < 6) {
+            alert('Le mot de passe doit contenir au moins 6 caractères.');
+            return false;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = `
+            <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"/>
+                <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            Création en cours…
+        `;
+        return true;
+    }
+</script>
 </body>
 </html>

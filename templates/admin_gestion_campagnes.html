@@ -3,154 +3,679 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Campagnes</title>
+    <title>Gestion des Campagnes – Outsourcia</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
-        .success-msg { animation: fadeOut 5s forwards; }
-        @keyframes fadeOut { 0% {opacity:1} 70% {opacity:1} 100% {opacity:0} }
+        :root {
+            --orange:       #f97316;
+            --orange-dark:  #ea580c;
+            --orange-glow:  rgba(249,115,22,.18);
+            --sidebar-bg:  linear-gradient(180deg, #1e3a8a, #172554);
+            --sidebar-w:    260px;
+            --header-h:     64px;
+            --surface:      #ffffff;
+            --surface-2:    #f8f9fb;
+            --border:       #e8eaee;
+            --text-primary: #0f1117;
+            --text-sec:     #6b7280;
+            --text-muted:   #9ca3af;
+        }
+
+        * { box-sizing:border-box; margin:0; padding:0; }
+
+        body {
+            font-family:'DM Sans',sans-serif;
+            background:var(--surface-2);
+            color:var(--text-primary);
+            height:100vh; overflow:hidden; display:flex;
+        }
+
+        /* ══ SIDEBAR ══════════════════════════════════════ */
+        #sidebar {
+            width:var(--sidebar-w); height:100vh;
+            background:var(--sidebar-bg);
+            display:flex; flex-direction:column;
+            flex-shrink:0; position:relative; z-index:50;
+            transition:transform .3s cubic-bezier(.4,0,.2,1);
+            overflow:hidden;
+        }
+        #sidebar::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(ellipse at 20% 0%,rgba(249,115,22,.08) 0%,transparent 60%);
+            pointer-events:none;
+        }
+        #sidebar::after {
+            content:''; position:absolute; top:0; right:0;
+            width:1px; height:100%;
+            background:linear-gradient(to bottom,transparent,rgba(249,115,22,.3) 40%,transparent);
+        }
+        .sidebar-logo { padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,.06); }
+        .sidebar-logo img { height:36px; filter:none; opacity:1; }
+
+        .sidebar-user {
+            padding:8px 10px; margin:6px 10px;
+            background:rgba(255,255,255,.04);
+            border:1px solid rgba(255,255,255,.08);
+            border-radius:12px; display:flex; align-items:center; gap:10px;
+        }
+        .sidebar-user-avatar {
+            width:34px; height:34px;
+            background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+            font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:white; flex-shrink:0;
+        }
+        .sidebar-user-name { font-size:13px; font-weight:600; color:rgba(255,255,255,.9); line-height:1.2; }
+        .sidebar-user-role { font-size:11px; color:var(--orange); font-weight:500; letter-spacing:.03em; }
+
+        .sidebar-nav { flex:1; overflow-y:auto; padding:8px 12px 12px; scrollbar-width:none; }
+        .sidebar-nav::-webkit-scrollbar { display:none; }
+
+        .nav-section-label {
+            font-size:9px; font-weight:700; letter-spacing:.12em;
+            text-transform:uppercase; color:rgba(255,255,255,.25); padding:10px 10px 4px;
+        }
+        .nav-item {
+            display:flex; align-items:center; gap:10px;
+            padding:6px 10px; border-radius:10px;
+            color:rgba(255,255,255,.55); font-size:12px; font-weight:500;
+            text-decoration:none; transition:all .18s ease;
+            position:relative; cursor:pointer; margin-bottom:2px;
+        }
+        .nav-item:hover { background:rgba(255,255,255,.06); color:rgba(255,255,255,.9); }
+        .nav-item.active { background:rgba(249,115,22,.15); color:var(--orange); }
+        .nav-item.active::before {
+            content:''; position:absolute; left:0; top:50%; transform:translateY(-50%);
+            width:3px; height:60%; background:var(--orange); border-radius:0 3px 3px 0;
+        }
+        .nav-icon { width:18px; height:18px; flex-shrink:0; opacity:.7; }
+        .nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity:1; }
+
+        .sidebar-footer { padding:10px 10px; border-top:1px solid rgba(255,255,255,.06); }
+        .btn-logout {
+            display:flex; align-items:center; gap:10px;
+            width:100%; padding:10px 12px; border-radius:10px;
+            color:rgba(239,68,68,.7); font-size:13.5px; font-weight:500;
+            text-decoration:none; transition:all .18s ease;
+            background:none; border:none; cursor:pointer;
+        }
+        .btn-logout:hover { background:rgba(239,68,68,.08); color:rgb(239,68,68); }
+
+        /* ══ MAIN AREA ════════════════════════════════════ */
+        .main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+        /* ══ TOP HEADER ═══════════════════════════════════ */
+        .top-header {
+            height:var(--header-h);
+            background:var(--surface); border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 28px; flex-shrink:0; position:relative; z-index:30;
+        }
+        .page-title-block h1 {
+            font-family:'Syne',sans-serif; font-size:18px; font-weight:700;
+            color:var(--text-primary); line-height:1.2;
+        }
+        .page-title-block p { font-size:12px; color:var(--text-muted); margin-top:1px; }
+
+        .header-right { display:flex; align-items:center; gap:10px; }
+
+        .search-wrap { position:relative; display:flex; align-items:center; }
+        .search-wrap input {
+            width:240px; padding:8px 14px 8px 38px;
+            border:1.5px solid var(--border); border-radius:10px;
+            font-size:13px; font-family:'DM Sans',sans-serif;
+            background:var(--surface-2); color:var(--text-primary);
+            outline:none; transition:border-color .18s, box-shadow .18s;
+        }
+        .search-wrap input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(249,115,22,.1); background:var(--surface); }
+        .search-wrap input::placeholder { color:var(--text-muted); }
+        .search-icon { position:absolute; left:12px; color:var(--text-muted); pointer-events:none; }
+
+        .btn-primary {
+            display:flex; align-items:center; gap:7px;
+            background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+            color:white; font-family:'DM Sans',sans-serif;
+            font-size:13px; font-weight:600;
+            padding:8px 18px; border-radius:10px;
+            border:none; cursor:pointer; transition:all .2s ease;
+            box-shadow:0 3px 12px rgba(249,115,22,.3);
+            text-decoration:none; white-space:nowrap;
+        }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(249,115,22,.4); }
+
+        .btn-icon {
+            display:flex; align-items:center; justify-content:center;
+            width:36px; height:36px;
+            background:var(--surface-2); border:1.5px solid var(--border);
+            border-radius:10px; cursor:pointer; transition:all .18s; font-size:16px;
+        }
+        .btn-icon:hover { border-color:var(--orange); background:rgba(249,115,22,.05); }
+
+        /* ══ CONTENT ══════════════════════════════════════ */
+        .content-area {
+            flex:1; overflow-y:auto; overflow-x:hidden;
+            padding:24px 28px;
+            scrollbar-width:thin; scrollbar-color:#e0e0e0 transparent;
+        }
+
+        .flash-msg {
+            display:flex; align-items:center; gap:10px;
+            padding:14px 18px; border-radius:12px;
+            background:#f0fdf4; border:1px solid #bbf7d0;
+            color:#15803d; font-size:13px; font-weight:500;
+            margin-bottom:16px;
+            animation:fadeSlide .4s ease both, fadeOut 5s 1s forwards;
+        }
+        @keyframes fadeSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeOut { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0;pointer-events:none} }
+
+        /* ══ TABLE ════════════════════════════════════════ */
+        .table-card {
+            background:var(--surface); border-radius:16px;
+            border:1px solid var(--border); overflow:hidden;
+            box-shadow:0 2px 16px rgba(0,0,0,.04);
+        }
+        .table-card-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:18px 24px; border-bottom:1px solid var(--border);
+        }
+        .table-card-title {
+            font-family:'Syne',sans-serif;
+            font-size:14px; font-weight:700; color:var(--text-primary);
+            display:flex; align-items:center; gap:8px;
+        }
+        .table-count {
+            font-size:11px; font-weight:600; color:var(--orange);
+            background:rgba(249,115,22,.08); border:1px solid rgba(249,115,22,.2);
+            padding:2px 9px; border-radius:6px;
+        }
+
+        table { width:100%; border-collapse:collapse; }
+        thead tr { background:var(--surface-2); border-bottom:1px solid var(--border); }
+        thead th {
+            padding:12px 18px; text-align:left;
+            font-family:'Syne',sans-serif;
+            font-size:11px; font-weight:700;
+            letter-spacing:.06em; text-transform:uppercase;
+            color:var(--text-muted); white-space:nowrap;
+        }
+        thead th:last-child { text-align:center; }
+        tbody tr { border-bottom:1px solid #f3f4f6; transition:background .14s; }
+        tbody tr:last-child { border-bottom:none; }
+        tbody tr:hover { background:#fafafa; }
+        tbody td { padding:13px 18px; font-size:13px; color:var(--text-primary); vertical-align:middle; }
+
+        .action-btn {
+            display:inline-flex; align-items:center; justify-content:center;
+            width:32px; height:32px; border-radius:8px;
+            border:1.5px solid var(--border); background:var(--surface);
+            cursor:pointer; transition:all .15s;
+        }
+        .action-btn:hover { transform:scale(1.08); }
+        .action-btn.edit:hover  { border-color:#3b82f6; background:#eff6ff; }
+        .action-btn.del:hover   { border-color:#ef4444; background:#fef2f2; }
+
+        /* ══ MODALS ═══════════════════════════════════════ */
+        .modal-backdrop {
+            position:fixed; inset:0; z-index:70;
+            display:flex; align-items:center; justify-content:center;
+            background:rgba(15,17,23,.6); backdrop-filter:blur(4px);
+        }
+        .modal-box {
+            background:var(--surface); border-radius:20px;
+            box-shadow:0 24px 80px rgba(0,0,0,.18);
+            width:100%; max-width:520px; margin:16px;
+            max-height:92vh; display:flex; flex-direction:column;
+            overflow:hidden; border:1px solid var(--border);
+        }
+        .modal-header {
+            padding:24px 28px 18px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .modal-header h2 {
+            font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--text-primary);
+        }
+        .modal-close {
+            width:30px; height:30px; border-radius:8px;
+            border:1px solid var(--border); background:var(--surface-2);
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; font-size:14px; color:var(--text-sec); transition:all .15s;
+        }
+        .modal-close:hover { background:#fee2e2; border-color:#fca5a5; color:#ef4444; }
+        .modal-body { flex:1; overflow-y:auto; padding:24px 28px; scrollbar-width:thin; scrollbar-color:#e0e0e0 transparent; }
+        .modal-footer {
+            padding:16px 28px; border-top:1px solid var(--border);
+            background:var(--surface-2); display:flex; gap:10px;
+        }
+
+        .field-group { margin-bottom:18px; }
+        .field-label { display:block; font-size:12px; font-weight:600; color:var(--text-sec); margin-bottom:7px; letter-spacing:.02em; }
+        .field-label .req { color:var(--orange); }
+        .field-input {
+            width:100%; padding:10px 14px;
+            border:1.5px solid var(--border); border-radius:10px;
+            font-size:13.5px; font-family:'DM Sans',sans-serif;
+            color:var(--text-primary); background:var(--surface);
+            outline:none; transition:border-color .18s, box-shadow .18s;
+        }
+        .field-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(249,115,22,.1); }
+        .field-input::placeholder { color:var(--text-muted); font-size:13px; }
+        .field-hint { font-size:11px; color:var(--text-muted); margin-top:5px; }
+
+        select.field-input {
+            appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;
+            background-position:right 14px center;
+            padding-right:36px;
+        }
+
+        .btn-ghost {
+            flex:1; padding:11px; border:1.5px solid var(--border); border-radius:10px;
+            font-size:13px; font-weight:600; color:var(--text-sec);
+            background:var(--surface); cursor:pointer; transition:all .15s;
+        }
+        .btn-ghost:hover { background:var(--surface-2); }
+        .btn-submit {
+            flex:1; padding:11px; border-radius:10px;
+            font-size:13px; font-weight:700; color:white;
+            background:linear-gradient(135deg,var(--orange),var(--orange-dark));
+            border:none; cursor:pointer; transition:all .2s;
+            box-shadow:0 3px 10px rgba(249,115,22,.28);
+        }
+        .btn-submit:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(249,115,22,.38); }
+
+        /* Delete modal */
+        .delete-modal-box {
+            background:var(--surface); border-radius:20px;
+            box-shadow:0 24px 80px rgba(0,0,0,.18);
+            width:100%; max-width:420px; margin:16px;
+            overflow:hidden; border:1px solid var(--border);
+        }
+        .delete-modal-top {
+            background:linear-gradient(135deg,#ef4444,#dc2626);
+            padding:28px 24px; text-align:center;
+        }
+        .delete-modal-icon {
+            width:56px; height:56px; background:rgba(255,255,255,.15);
+            border-radius:16px; display:flex; align-items:center; justify-content:center;
+            margin:0 auto 14px; font-size:26px;
+        }
+        .delete-modal-top h3 { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:white; }
+        .delete-modal-body { padding:24px 28px; }
+        .delete-modal-body p { font-size:14px; color:var(--text-sec); text-align:center; line-height:1.6; margin-bottom:22px; }
+        .delete-modal-body strong { color:var(--text-primary); }
+        .delete-actions { display:flex; gap:10px; }
+        .btn-cancel {
+            flex:1; padding:12px; border:1.5px solid var(--border); border-radius:10px;
+            font-size:13px; font-weight:600; color:var(--text-sec);
+            background:var(--surface); cursor:pointer; transition:all .15s;
+        }
+        .btn-cancel:hover { background:var(--surface-2); }
+        .btn-danger {
+            flex:1; padding:12px; border-radius:10px;
+            font-size:13px; font-weight:700; color:white;
+            background:linear-gradient(135deg,#ef4444,#dc2626);
+            border:none; cursor:pointer; transition:all .2s;
+            box-shadow:0 3px 10px rgba(239,68,68,.28);
+        }
+        .btn-danger:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(239,68,68,.38); }
+
+        /* Mobile */
+        #sidebarOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40; backdrop-filter:blur(2px); }
+        .mobile-menu-btn {
+            display:none; align-items:center; justify-content:center;
+            width:36px; height:36px; border-radius:10px;
+            background:var(--surface-2); border:1.5px solid var(--border);
+            cursor:pointer; color:var(--text-primary);
+        }
+        @media (max-width:768px) {
+            #sidebar { position:fixed; top:0; left:0; transform:translateX(-100%); }
+            #sidebar.open { transform:translateX(0); }
+            #sidebarOverlay.open { display:block; }
+            .mobile-menu-btn { display:flex; }
+            body { overflow:auto; }
+            .main-area { height:100vh; }
+        }
+
+        @keyframes fadeSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .animate-in { animation:fadeSlideIn .35s ease both; }
+        .anim-d1 { animation-delay:.06s; }
+
+        /* DARK MODE */
+        .dark {
+            --surface: #0f172a;
+            --surface-2: #020617;
+            --border: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-sec: #cbd5f5;
+            --text-muted: #94a3b8;
+        }
+        .dark body { background: var(--surface-2); color: var(--text-primary); }
+        .dark .top-header { background: var(--surface); border-color: var(--border); }
+        .dark .table-card { background: var(--surface); border-color: var(--border); }
+        .dark thead tr { background: #020617; }
+        .dark tbody tr:hover { background: #020617; }
+        .dark .btn-icon { background: var(--surface); border-color: var(--border); }
+        .dark input, .dark select { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
+        .dark .modal-box, .dark .delete-modal-box { background: var(--surface); border-color: var(--border); }
+        .dark .modal-footer { background: var(--surface-2); border-color: var(--border); }
+        .dark .field-input { background: var(--surface); color: var(--text-primary); }
+        .dark .btn-ghost { background: var(--surface); }
+        .dark .btn-ghost:hover { background: var(--surface-2); }
+        /* ══ FILTRE DO ══ */
+.filter-do-select {
+    padding:7px 32px 7px 12px;
+    border:1.5px solid var(--border);
+    border-radius:8px;
+    font-size:12px; font-family:'DM Sans',sans-serif;
+    background:var(--surface);
+    color:var(--text-primary);
+    cursor:pointer;
+    outline:none;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    transition:border-color .18s;
+}
+.filter-do-select:focus { border-color:var(--orange); }
+
+/* ══ PAGINATION ══ */
+.pagination {
+    display:flex; align-items:center; justify-content:center;
+    gap:4px; padding:14px 0 6px;
+}
+.page-btn {
+    width:34px; height:34px;
+    border:1.5px solid var(--border);
+    border-radius:8px;
+    background:var(--surface);
+    color:var(--text-sec);
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s;
+}
+.page-btn:hover:not(.active):not(:disabled) {
+    border-color:var(--orange);
+    color:var(--orange);
+    background:rgba(249,115,22,.05);
+}
+.page-btn.active {
+    background:var(--orange);
+    color:white;
+    border-color:var(--orange);
+    font-weight:700;
+}
+.page-btn:disabled {
+    opacity:.35;
+    cursor:not-allowed;
+}
+.page-info {
+    font-size:12px; color:var(--text-muted);
+    margin:0 8px;
+}
+
+/* Dark mode */
+.dark .page-btn { background: var(--surface); border-color: var(--border); color: var(--text-sec); }
+.dark .filter-do-select { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
 
-<div class="max-w-screen-2xl mx-auto px-6 py-6">
+<body>
+<!-- ══ SIDEBAR ═══════════════════════════════════════════ -->
+<aside id="sidebar">
+    <div class="sidebar-logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Outsourcia">
+    </div>
 
-    <div class="flex items-center justify-between mb-8">
-        <!-- Bouton Menu Orange -->
-<button onclick="openSidebar()" 
-        class="flex items-center gap-3 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-    <span>Menu</span>
-</button>
-        <h1 class="text-3xl font-bold">Gestion des Campagnes</h1>
-
-        <div class="flex items-center gap-3 mt-32">
-            <div class="relative w-80">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher Campagne..." 
-                       class="w-full px-5 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-orange-500 text-sm">
-                <div class="absolute left-4 top-3.5 text-gray-400 text-xl">🔍︎</div>
+    <!-- User info -->
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+            {{ user.prenom[0] }}{{ user.nom[0] }}
+        </div>
+        <div class="sidebar-user-info">
+            <div class="sidebar-user-name">
+                {{ user.nom }} {{ user.prenom }}
             </div>
-
-            
-
-            <button onclick="openModal()" 
-                    class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-2xl font-medium shadow-md transition">
-                <span class="text-2xl">+</span> Nouvelle Campagne
-            </button>
-
-            <button onclick="toggleDarkMode()" class="p-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition text-gray-500">
-                <span id="theme-icon" class="text-2xl">🌙</span>
-            </button>
+            <div class="sidebar-user-role">
+                {{ user.role|capitalize }}
+            </div>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, msg in messages %}
-                <div class="success-msg mb-6 px-6 py-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-2xl">
-                    ✅ {{ msg }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Principal</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Tableau de bord
+        </a>
 
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow overflow-hidden">
-        <table id="campagneTable" class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700 border-b">
-                <tr>
-                    <th class="px-8 py-5 text-left">ID</th>
-                    <th class="px-8 py-5 text-left">Nom</th>
-                    <th class="px-8 py-5 text-left">Date Début</th>
-                    
-                    <th class="px-8 py-5 text-left">DO</th>
-                    <th class="px-8 py-5 text-center w-36">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y">
-                {% for c in campagnes %}
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td class="px-8 py-5">{{ c.id }}</td>
-                    <td class="px-8 py-5">{{ c.nom }}</td>
-                    <td class="px-8 py-5">{{ c.date_debut }}</td>
-                    
-                    <td class="px-8 py-5">{{ c.do.nom if c.do else '—' }}</td>
-                    <td class="px-8 py-5">
-                    
-    <div class="flex items-center justify-center gap-8">
-        <!-- Bouton Modifier -->
-        <button onclick="editCampagne({{ c.id }}, '{{ c.nom }}', '{{ c.date_debut }}', {{ c.do.id if c.do else 'null' }})">
-            <img src="{{ url_for('static', filename='images/gear.png') }}" width="60" height="60" alt="Modifier">
-        </button>
+        <div class="nav-section-label">Administration</div>
+        <a href="{{ url_for('gestion_utilisateurs') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Utilisateurs
+        </a>
+        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+            Donneurs d'Ordre
+        </a>
+        <a href="{{ url_for('gestion_campagnes') }}" class="nav-item active">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+            </svg>
+            Campagnes
+        </a>
+        <a href="{{ url_for('gestion_npv') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+            </svg>
+            NPV
+        </a>
+        <a href="{{ url_for('gestion_operateurs') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            Opérateurs
+        </a>
 
-        <!-- Bouton Suppression (nouveau modal orange) -->
-        <button onclick="showDeleteModal({{ c.id }}, '{{ c.nom }}')" 
-                class="hover:scale-110 transition">
-            <img src="{{ url_for('static', filename='images/trash.png') }}" width="60" height="60" alt="Supprimer">
-        </button>
+        <div class="nav-section-label">Facturation</div>
+        <a href="{{ url_for('gestion_factures') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            Factures
+        </a>
+
+        <div class="nav-section-label">Audit</div>
+        <a href="{{ url_for('historique') }}" class="nav-item">
+            <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Historique
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="btn-logout">
+            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Déconnexion
+        </a>
     </div>
-</td>
-                </tr>
+</aside>
+
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══ MAIN AREA ══════════════════════════════════════════ -->
+<div class="main-area">
+
+    <!-- Header -->
+    <header class="top-header animate-in">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <button class="mobile-menu-btn" onclick="openSidebar()">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="page-title-block">
+                <h1>Gestion des <span style="color:var(--orange)">Campagnes</span></h1>
+                <p>Créez, modifiez et gérez les campagnes</p>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="search-wrap">
+                <svg class="search-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Rechercher une campagne…">
+            </div>
+            <button class="btn-icon" onclick="toggleDarkMode()" title="Thème">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <button class="btn-primary" onclick="openModal()">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nouvelle Campagne
+            </button>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-area">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                <div class="flash-msg"><span>✅</span><span>{{ msg }}</span></div>
                 {% endfor %}
-            </tbody>
-        </table>
+            {% endif %}
+        {% endwith %}
+
+        <div class="table-card animate-in anim-d1">
+    <div class="table-card-header">
+    <div class="table-card-title">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--orange)" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+        </svg>
+        Toutes les Campagnes
+        <span class="table-count" id="campagneCount"></span>
+    </div>
+    
+    <!-- ══ FILTRE PAR DO ══ -->
+    <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap;">Filtrer par DO :</label>
+        <select id="filterDO" onchange="applyFilters()" class="filter-do-select">
+            <option value="">Tous les DOs</option>
+            {% for d in donneurs %}
+            <option value="{{ d.id }}">{{ d.nom }}</option>
+            {% endfor %}
+        </select>
     </div>
 </div>
 
-<!-- MODAL pour Campagnes -->
-<!-- Modal Suppression Orange -->
-<div id="deleteModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div class="bg-orange-600 text-white px-8 py-6 text-center">
-            <div class="mx-auto w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
-                <img src="{{ url_for('static', filename='images/trash.png') }}" width="50" height="50" class="opacity-90">
+            <div style="overflow-x:auto;">
+                <table id="campagneTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Date Début</th>
+                            <th>DO</th>
+                            <th style="text-align:center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campagneTableBody">
+    {% for c in campagnes %}
+    <tr data-do-id="{{ c.do.id if c.do else '' }}" data-search="{{ c.nom }} {{ c.do.nom if c.do else '' }} {{ c.id }}">
+        <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted)">#{{ c.id }}</span></td>
+        <td style="font-weight:600">{{ c.nom }}</td>
+        <td style="color:var(--text-sec);font-size:12.5px">{{ c.date_debut }}</td>
+        <td style="color:var(--text-sec);font-size:12.5px">{{ c.do.nom if c.do else '—' }}</td>
+        <td>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                <button class="action-btn edit" title="Modifier"
+                    onclick="editCampagne({{ c.id }}, '{{ c.nom }}', '{{ c.date_debut }}', {{ c.do.id if c.do else 'null' }})">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </button>
+                <button class="action-btn del" title="Supprimer"
+                    onclick="showDeleteModal({{ c.id }}, '{{ c.nom }}')">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
             </div>
-            <h3 class="text-2xl font-bold">Supprimer la campagne ?</h3>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+                </table>
+            </div>
+            <!-- ══ PAGINATION ══ -->
+<div class="pagination" id="paginationContainer"></div>
         </div>
 
-        <div class="p-8 text-center">
-            <p id="deleteMessage" class="text-gray-700 dark:text-gray-300 text-lg mb-10"></p>
+    </div>
+</div>
 
-            <div class="flex gap-4">
-                <button onclick="closeDeleteModal()" 
-                        class="flex-1 py-4 text-gray-700 font-medium border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                    Non, annuler
-                </button>
-                <button onclick="confirmDeleteAction()" 
-                        class="flex-1 py-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl transition">
-                    Oui, supprimer
-                </button>
+
+<!-- ══ MODAL SUPPRESSION ══════════════════════════════════ -->
+<div id="deleteModal" class="modal-backdrop" style="display:none;">
+    <div class="delete-modal-box">
+        <div class="delete-modal-top">
+            <div class="delete-modal-icon">🗑️</div>
+            <h3>Supprimer la Campagne ?</h3>
+        </div>
+        <div class="delete-modal-body">
+            <p id="deleteMessage"></p>
+            <div class="delete-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Non, annuler</button>
+                <button class="btn-danger" onclick="confirmDeleteAction()">Oui, supprimer</button>
             </div>
         </div>
     </div>
 </div>
-<!-- ===================== MODAL CAMPAGNE ===================== -->
-<div id="campagneModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-        <div class="px-8 pt-8 pb-6">
-            <h2 id="modalTitle" class="text-2xl font-bold mb-6">Nouvelle Campagne</h2>
-            
-            <form method="POST" id="campagneForm" onsubmit="return validateCampagneForm()" class="space-y-6">
+
+<!-- ══ MODAL CAMPAGNE ════════════════════════════════════════ -->
+<div id="campagneModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 id="modalTitle">Nouvelle Campagne</h2>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <form method="POST" id="campagneForm" onsubmit="return validateCampagneForm()">
                 <input type="hidden" name="action" id="formAction" value="create">
                 <input type="hidden" name="campagne_id" id="campagneId">
 
-                <div>
-                    <label class="block text-sm font-medium mb-2">Nom de la Campagne <span class="text-red-500">*</span></label>
-                    <input type="text" name="nom" id="nom" required 
-                           class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
+                <div class="field-group">
+                    <label class="field-label">Nom de la Campagne <span class="req">*</span></label>
+                    <input type="text" name="nom" id="nom" required class="field-input" placeholder="Campagne Été 2025">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium mb-2">Date Début <span class="text-red-500">*</span></label>
-                    <input type="date" name="date_debut" id="date_debut" required 
-                           class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
+                <div class="field-group">
+                    <label class="field-label">Date Début <span class="req">*</span></label>
+                    <input type="date" name="date_debut" id="date_debut" required class="field-input">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium mb-2">Donneur d'Ordre <span class="text-red-500">*</span></label>
-                    <select name="do_id" id="do_id" required 
-                            class="w-full px-5 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500">
+                <div class="field-group">
+                    <label class="field-label">Donneur d'Ordre <span class="req">*</span></label>
+                    <select name="do_id" id="do_id" required class="field-input">
                         <option value="">-- Sélectionner un DO --</option>
                         {% for d in donneurs %}
                         <option value="{{ d.id }}">{{ d.nom }}</option>
@@ -160,46 +685,147 @@
             </form>
         </div>
 
-        <div class="bg-gray-50 px-8 py-5 flex gap-3 rounded-b-3xl">
-            <button onclick="closeModal()" 
-                    class="flex-1 py-3.5 text-gray-700 font-medium rounded-2xl hover:bg-gray-100 transition">
-                Annuler
-            </button>
-            <button type="submit" 
-                    form="campagneForm"
-                    class="flex-1 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-2xl transition">
-                Enregistrer
-            </button>
+        <div class="modal-footer">
+            <button class="btn-ghost" onclick="closeModal()">Annuler</button>
+            <button class="btn-submit" type="submit" form="campagneForm">Enregistrer</button>
         </div>
     </div>
 </div>
-<!-- SIDEBAR -->
-<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto">
-    <div class="p-5 flex justify-between items-center border-b">
-        <div class="flex items-center">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="h-9 mr-3">
-            <h2 class="text-xl font-bold text-gray-900">Menu</h2>
-        </div>
-        <button onclick="closeSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl">✕</button>
-    </div>
-
-    <nav class="p-5 space-y-1">
-        <a href="{{ url_for('admin_dashboard') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Accueil Dashboard</a>
-        <a href="{{ url_for('gestion_utilisateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des utilisateurs</a>
-        <a href="{{ url_for('gestion_donneurs_ordre') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des DO</a>
-        <a href="{{ url_for('gestion_campagnes') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des campagnes</a>
-        <a href="{{ url_for('gestion_npv') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des NPV</a>
-        <a href="{{ url_for('gestion_operateurs') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Gestion des opérateurs</a>
-        <a href="{{ url_for('historique') }}" class="block px-5 py-3 text-gray-800 font-medium rounded-lg hover:bg-orange-50 hover:text-primary transition">Historique global des actions</a>
-    </nav>
-</aside>
 
 <script>
     function searchTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        document.querySelectorAll("#campagneTable tbody tr").forEach(row => {
-            row.style.display = row.textContent.toLowerCase().includes(input) ? "" : "none";
+    pageActuelle = 1;
+    applyFilters();
+}
+    // ═══════════════════════════════════════════════════════
+    //  PAGINATION + FILTRE
+    // ═══════════════════════════════════════════════════════
+    const LIGNES_PAR_PAGE = 10;
+    let pageActuelle = 1;
+    let totalPages = 1;
+
+    function getLignesVisibles() {
+        const filtreDO = document.getElementById('filterDO').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const toutesLesLignes = document.querySelectorAll('#campagneTableBody tr');
+        
+        let lignesFiltrees = [];
+        toutesLesLignes.forEach(row => {
+            let visible = true;
+            
+            // Filtre DO
+            if (filtreDO && row.getAttribute('data-do-id') !== filtreDO) {
+                visible = false;
+            }
+            
+            // Filtre recherche
+            if (searchTerm && !row.getAttribute('data-search').toLowerCase().includes(searchTerm)) {
+                visible = false;
+            }
+            
+            row.style.display = 'none';
+            if (visible) {
+                lignesFiltrees.push(row);
+            }
         });
+        
+        return lignesFiltrees;
+    }
+
+    function applyFilters() {
+        const lignes = getLignesVisibles();
+        totalPages = Math.ceil(lignes.length / LIGNES_PAR_PAGE) || 1;
+        
+        if (pageActuelle > totalPages) pageActuelle = totalPages;
+        
+        const debut = (pageActuelle - 1) * LIGNES_PAR_PAGE;
+        const fin = debut + LIGNES_PAR_PAGE;
+        
+        lignes.forEach((row, index) => {
+            if (index >= debut && index < fin) {
+                row.style.display = '';
+            }
+        });
+        
+        document.getElementById('campagneCount').textContent = lignes.length;
+        renderPagination();
+    }
+
+    function renderPagination() {
+        const container = document.getElementById('paginationContainer');
+        container.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+        
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'page-btn';
+        btnPrev.innerHTML = '‹';
+        btnPrev.disabled = pageActuelle === 1;
+        btnPrev.onclick = () => { if (pageActuelle > 1) { pageActuelle--; applyFilters(); } };
+        container.appendChild(btnPrev);
+        
+        const maxButtons = 5;
+        let startPage = Math.max(1, pageActuelle - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        if (endPage - startPage < maxButtons - 1) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+        
+        if (startPage > 1) {
+            const btnFirst = document.createElement('button');
+            btnFirst.className = 'page-btn';
+            btnFirst.textContent = '1';
+            btnFirst.onclick = () => { pageActuelle = 1; applyFilters(); };
+            container.appendChild(btnFirst);
+            if (startPage > 2) {
+                const dots = document.createElement('span');
+                dots.className = 'page-info'; dots.textContent = '…';
+                container.appendChild(dots);
+            }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'page-btn' + (i === pageActuelle ? ' active' : '');
+            btn.textContent = i;
+            btn.onclick = () => { pageActuelle = i; applyFilters(); };
+            container.appendChild(btn);
+        }
+        
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.className = 'page-info'; dots.textContent = '…';
+                container.appendChild(dots);
+            }
+            const btnLast = document.createElement('button');
+            btnLast.className = 'page-btn';
+            btnLast.textContent = totalPages;
+            btnLast.onclick = () => { pageActuelle = totalPages; applyFilters(); };
+            container.appendChild(btnLast);
+        }
+        
+        const btnNext = document.createElement('button');
+        btnNext.className = 'page-btn';
+        btnNext.innerHTML = '›';
+        btnNext.disabled = pageActuelle === totalPages;
+        btnNext.onclick = () => { if (pageActuelle < totalPages) { pageActuelle++; applyFilters(); } };
+        container.appendChild(btnNext);
+        
+        const info = document.createElement('span');
+        info.className = 'page-info';
+        info.textContent = `Page ${pageActuelle}/${totalPages}`;
+        container.appendChild(info);
+    }
+
+    // ── Sidebar ───────────────────────────────────────────
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
     }
 
     function toggleDarkMode() {
@@ -207,123 +833,66 @@
         document.getElementById('theme-icon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
     }
 
+    // ── Modal Campagne ──────────────────────────────────────
     function openModal() {
-        document.getElementById('campagneModal').classList.remove('hidden');
-        document.getElementById('modalTitle').textContent = 'Nouvelle Campagne';
+        document.getElementById('campagneModal').style.display = 'flex';
+        document.getElementById('modalTitle').textContent = "Nouvelle Campagne";
         document.getElementById('formAction').value = 'create';
         document.getElementById('campagneForm').reset();
     }
+    function closeModal() { document.getElementById('campagneModal').style.display = 'none'; }
 
     function editCampagne(id, nom, date_debut, do_id) {
-    document.getElementById('campagneModal').classList.remove('hidden');
-    document.getElementById('modalTitle').textContent = 'Modifier Campagne';
-    document.getElementById('formAction').value = 'update';
-    document.getElementById('campagneId').value = id;
-
-    document.getElementById('nom').value = nom;
-    
-    // Gestion de la date
-    if (date_debut) {
-        document.getElementById('date_debut').value = date_debut.split(' ')[0];   // YYYY-MM-DD
+        document.getElementById('campagneModal').style.display = 'flex';
+        document.getElementById('modalTitle').textContent = 'Modifier Campagne';
+        document.getElementById('formAction').value = 'update';
+        document.getElementById('campagneId').value = id;
+        document.getElementById('nom').value = nom;
+        if (date_debut) {
+            document.getElementById('date_debut').value = date_debut.split(' ')[0];
+        }
+        const doSelect = document.getElementById('do_id');
+        if (do_id && do_id !== 'null' && do_id !== null) {
+            doSelect.value = do_id;
+        } else {
+            doSelect.value = '';
+        }
     }
 
-    // Correction importante : affichage du DO sélectionné
-    const doSelect = document.getElementById('do_id');
-    if (do_id && do_id !== 'null' && do_id !== null) {
-        doSelect.value = do_id;        // Sélectionne le bon DO
-    } else {
-        doSelect.value = '';           // Aucun DO sélectionné
+    // ── Delete modal ──────────────────────────────────────
+    let itemToDeleteId = null;
+    function showDeleteModal(id, nom) {
+        itemToDeleteId = id;
+        document.getElementById('deleteMessage').innerHTML =
+            `Êtes-vous sûr de vouloir supprimer <strong>${nom}</strong> ?<br><small style="color:var(--text-muted)">Cette action est irréversible.</small>`;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+    function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; itemToDeleteId = null; }
+    function confirmDeleteAction() {
+        if (itemToDeleteId !== null) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ url_for('gestion_campagnes') }}";
+            const a = document.createElement('input'); a.type='hidden'; a.name='action'; a.value='delete';
+            const i = document.createElement('input'); i.type='hidden'; i.name='campagne_id'; i.value=itemToDeleteId;
+            form.appendChild(a); form.appendChild(i);
+            document.body.appendChild(form); form.submit();
+        }
     }
 
-    // Réinitialiser la validation
-    document.getElementById('campagneForm').onsubmit = function() {
-        return validateCampagneForm();
-    };
-}
-
-    function closeModal() {
-        document.getElementById('campagneModal').classList.add('hidden');
-    }
-    function openSidebar() {
-    document.getElementById('sidebar').classList.remove('-translate-x-full');
-    document.getElementById('sidebar').classList.add('translate-x-0');
-}
-
-function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('translate-x-0');
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-}
-
-// Fermer en cliquant en dehors
-document.addEventListener('click', function(event) {
-    const sidebar = document.getElementById('sidebar');
-    const menuButton = document.querySelector('button[onclick="openSidebar()"]');
-    if (!sidebar.contains(event.target) && !menuButton.contains(event.target)) {
-        closeSidebar();
-    }
-});
-let itemToDeleteId = null;
-
-function showDeleteModal(itemId, itemName) {
-    itemToDeleteId = itemId;
-    document.getElementById('deleteMessage').innerHTML = 
-        `Êtes-vous sûr de vouloir supprimer <strong>${itemName}</strong> ?<br>
-         <span class="text-sm text-gray-500">Cette action est irréversible.</span>`;
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    itemToDeleteId = null;
-}
-
-function confirmDeleteAction() {
-    if (itemToDeleteId !== null) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = "{{ url_for('gestion_campagnes') }}";   // Important : changer selon la page
-        
-        const actionField = document.createElement('input');
-        actionField.type = 'hidden';
-        actionField.name = 'action';
-        actionField.value = 'delete';
-        
-        const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'campagne_id';     // Important : changer selon la page (user_id, donneur_id, npv_id, operateur_id, etc.)
-        idField.value = itemToDeleteId;
-        
-        form.appendChild(actionField);
-        form.appendChild(idField);
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-function validateCampagneForm() {
-    const nom = document.getElementById('nom').value.trim();
-    const date_debut = document.getElementById('date_debut').value.trim();
-    const do_id = document.getElementById('do_id').value.trim();
-
-    if (!nom) {
-        alert("Le nom de la campagne est obligatoire !");
-        document.getElementById('nom').focus();
-        return false;
+    // ── Validation ────────────────────────────────────────
+    function validateCampagneForm() {
+        const nom = document.getElementById('nom').value.trim();
+        const date_debut = document.getElementById('date_debut').value.trim();
+        const do_id = document.getElementById('do_id').value.trim();
+        if (!nom || !date_debut || !do_id) { alert("Tous les champs sont obligatoires !"); return false; }
+        return true;
     }
 
-    if (!date_debut) {
-        alert("La date de début est obligatoire !");
-        document.getElementById('date_debut').focus();
-        return false;
-    }
-
-    if (!do_id) {
-        alert("Veuillez sélectionner un Donneur d'Ordre !");
-        document.getElementById('do_id').focus();
-        return false;
-    }
-
-    return true;
-}
+    // ── Init ──────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        applyFilters();
+    });
 </script>
 </body>
 </html>

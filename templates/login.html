@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - Mon App</title>
+    <title>Outsourcia – Portail de Connexion</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,74 +12,563 @@
           extend: {
             colors: {
               primary: '#f97316',
-              primaryDark: '#c2410c',
+              primaryDark: '#ea580c',
+              primaryLight: '#ffedd5',
+              darkBlue: '#1e3a8a',
+              darkerBlue: '#172554',
+              blue800: '#1e40af',
             }
           }
         }
       }
     </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+        
+        h1, h2, h3, .font-display {
+            font-family: 'Syne', sans-serif;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-15px) rotate(0.5deg); }
+            66% { transform: translateY(-5px) rotate(-0.5deg); }
+        }
+        
+        @keyframes floatVerticalRight1 {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-10px, -20px); }
+            50% { transform: translate(-5px, -10px); }
+            75% { transform: translate(-15px, 5px); }
+        }
+        
+        @keyframes floatVerticalRight2 {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-15px, 15px); }
+            50% { transform: translate(-8px, 25px); }
+            75% { transform: translate(-20px, 10px); }
+        }
+        
+        @keyframes floatVerticalRight3 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-12px, -25px); }
+            66% { transform: translate(-18px, 15px); }
+        }
+        
+        @keyframes floatVerticalRight4 {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(-20px, 20px); }
+            66% { transform: translate(-10px, -15px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.15), 0 0 60px rgba(30, 58, 138, 0.1); }
+            50% { box-shadow: 0 0 50px rgba(249, 115, 22, 0.25), 0 0 80px rgba(30, 58, 138, 0.2); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        @keyframes marqueeReverse {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0); }
+        }
+        
+        @keyframes countPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes popInRight {
+            0% { opacity: 0; transform: scale(0.5) translateX(30px); }
+            70% { transform: scale(1.05) translateX(-5px); }
+            100% { opacity: 1; transform: scale(1) translateX(0); }
+        }
+        
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-right1 { animation: floatVerticalRight1 7s ease-in-out infinite; }
+        .animate-float-right2 { animation: floatVerticalRight2 8s ease-in-out infinite; }
+        .animate-float-right3 { animation: floatVerticalRight3 6s ease-in-out infinite; }
+        .animate-float-right4 { animation: floatVerticalRight4 9s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .animate-slide-down { animation: slideDown 0.5s ease-out both; }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out both; }
+        .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .animate-count-pulse { animation: countPulse 2s ease-in-out infinite; }
+        
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        .stagger-5 { animation-delay: 0.5s; }
+        
+        .marquee-wrapper { overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-content { display: inline-flex; animation: marquee 30s linear infinite; }
+        .marquee-content-reverse { display: inline-flex; animation: marqueeReverse 35s linear infinite; }
+        
+        .floating-panel {
+            position: fixed;
+            background: rgba(30, 58, 138, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1.5px solid rgba(249, 115, 22, 0.3);
+            border-radius: 16px;
+            padding: 14px 18px;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .floating-panel:hover {
+            background: rgba(30, 58, 138, 0.9);
+            border-color: rgba(249, 115, 22, 0.7);
+            transform: scale(1.08) !important;
+            box-shadow: 0 20px 40px rgba(249, 115, 22, 0.4);
+            z-index: 20;
+        }
+        
+        .floating-panel-orange {
+            background: rgba(249, 115, 22, 0.6);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .floating-panel-orange:hover {
+            background: rgba(249, 115, 22, 0.85);
+            border-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 20px 40px rgba(249, 115, 22, 0.6);
+        }
+        
+        .input-premium {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            color: white;
+        }
+        
+        .input-premium::placeholder { color: rgba(255, 255, 255, 0.5); }
+        
+        .input-premium:focus {
+            border-color: #f97316;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+            transform: translateY(-2px);
+            outline: none;
+        }
+        
+        .btn-connect-main {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #f97316 100%);
+            background-size: 200% auto;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-connect-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn-connect-main:hover {
+            background-position: right center;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(249, 115, 22, 0.4);
+        }
+        
+        .btn-connect-main:hover::before { left: 100%; }
+        
+        .login-card {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.97) 0%, rgba(23, 37, 84, 0.97) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 25;
+        }
+        
+        .poster-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .poster-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(249, 115, 22, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        
+        .poster-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .poster-card:hover::after { opacity: 1; }
+        
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 70%);
+            top: -150px; right: -150px;
+        }
+        
+        .orb-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(30, 58, 138, 0.2) 0%, transparent 70%);
+            bottom: -100px; left: -100px;
+        }
+        
+        .particle {
+            position: fixed; pointer-events: none; z-index: 0; border-radius: 50%;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(249, 115, 22, 0.3); border-radius: 3px; }
+        
+        #floatingPanelsContainer {
+            position: fixed; inset: 0; pointer-events: none; z-index: 10;
+            opacity: 0; transition: opacity 0.8s ease;
+        }
+        
+        #floatingPanelsContainer.active { opacity: 1; }
+        
+        #floatingPanelsContainer .floating-panel { pointer-events: auto; }
+        
+        @media (max-width: 1024px) {
+            .floating-panel { display: none !important; }
+        }
+    </style>
 </head>
-<body class="h-full bg-white flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <div class="bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-200">
-            <div class="px-8 py-10">   <!-- py-10 au lieu de py-12 pour gagner de la hauteur -->
+<body class="min-h-screen bg-gray-900 relative overflow-x-hidden overflow-y-auto" id="pageBody">
+    
+    <div class="orb orb-1 animate-float"></div>
+    <div class="orb orb-2 animate-float"></div>
+    
+    <div class="particle" style="top:10%;left:5%;width:8px;height:8px;background:rgba(249,115,22,0.3);animation:float 4s ease-in-out 0s infinite;"></div>
+    <div class="particle" style="top:20%;right:15%;width:6px;height:6px;background:rgba(255,255,255,0.2);animation:float 4s ease-in-out 1s infinite;"></div>
+    <div class="particle" style="bottom:30%;left:15%;width:10px;height:10px;background:rgba(249,115,22,0.25);animation:float 4s ease-in-out 2s infinite;"></div>
+    <div class="particle" style="bottom:10%;right:25%;width:4px;height:4px;background:rgba(255,255,255,0.3);animation:float 4s ease-in-out 0.5s infinite;"></div>
+    <div class="particle" style="top:50%;right:10%;width:7px;height:7px;background:rgba(30,58,138,0.4);animation:float 4s ease-in-out 1.5s infinite;"></div>
 
-                <!-- Logo grand mais contrôlé -->
-                <div class="flex justify-center mb-6">
-                    <img src="{{ url_for('static', filename='logo.png') }}" 
-                         alt="Logo Entreprise" 
-                         class="h-30 w-auto">   <!-- h-16 = beau et pas trop grand -->
-                </div>
-
-                <!-- Titre -->
-                <h2 class="text-2xl font-semibold text-gray-900 text-center mb-8">Connexion</h2>
-
-                <!-- Messages flash -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        <div class="space-y-3 mb-6">
-                            {% for category, message in messages %}
-                                <div class="p-4 rounded-xl text-sm border shadow-sm
-                                            {% if category == 'success' %}bg-green-50 border-green-200 text-green-800{% endif %}
-                                            {% if category == 'error' %}bg-red-50 border-red-200 text-red-800{% endif %}
-                                            {% if category == 'info' or category == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% endif %}">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-
-                <p class="text-center text-gray-600 mb-8 text-sm">
-                    Connectez-vous pour accéder à la plateforme
-                </p>
-
-                <form method="POST" class="space-y-6">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Adresse email</label>
-                        <input type="email" name="email" id="email" required autofocus
-                               class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3 transition duration-150"
-                               placeholder="exemple@domaine.com">
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                        <input type="password" name="password" id="password" required
-                               class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm px-4 py-3 transition duration-150"
-                               placeholder="••••••••">
-                    </div>
-
-                    <button type="submit"
-                            class="w-full bg-primary hover:bg-primaryDark text-white font-medium py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-200">
-                        Se connecter
-                    </button>
-                </form>
-
-                <p class="mt-8 text-center text-sm text-gray-600">
-                    Pour obtenir un compte, contactez l'administrateur.
-                </p>
-            </div>
+    <div id="floatingPanelsContainer">
+        <div class="floating-panel animate-float-right1" style="top: 4%; right: 6%; max-width: 170px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) both, floatVerticalRight1 7s ease-in-out 0.6s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">🌍</span><div><div class="text-orange-400 font-display font-bold text-xl">4</div><div class="text-white/70 text-xs uppercase tracking-wider">Pays</div></div></div>
+        </div>
+        <div class="floating-panel animate-float-right2" style="top: 16%; right: 10%; max-width: 170px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both, floatVerticalRight2 8s ease-in-out 0.7s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">🏢</span><div><div class="text-orange-400 font-display font-bold text-xl">12</div><div class="text-white/70 text-xs uppercase tracking-wider">Sites</div></div></div>
+        </div>
+        <div class="floating-panel animate-float-right3" style="top: 28%; right: 4%; max-width: 170px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both, floatVerticalRight3 6s ease-in-out 0.8s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">🗣️</span><div><div class="text-orange-400 font-display font-bold text-xl">10</div><div class="text-white/70 text-xs uppercase tracking-wider">Langues</div></div></div>
+        </div>
+        <div class="floating-panel floating-panel-orange animate-float-right4" style="top: 40%; right: 8%; max-width: 195px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both, floatVerticalRight4 9s ease-in-out 0.9s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">👥</span><div><div class="text-white font-display font-bold text-xl animate-count-pulse">4 300</div><div class="text-white/80 text-xs uppercase tracking-wider">Collaborateurs</div></div></div>
+        </div>
+        <div class="floating-panel animate-float-right1" style="top: 54%; right: 5%; max-width: 195px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both, floatVerticalRight1 7s ease-in-out 1s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">🎯</span><div><div class="text-orange-400 font-display font-bold text-sm">Customer</div><div class="text-white font-display font-bold text-base">Obsession</div></div></div>
+        </div>
+        <div class="floating-panel floating-panel-orange animate-float-right2" style="top: 66%; right: 9%; max-width: 185px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both, floatVerticalRight2 8s ease-in-out 1.1s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">💡</span><div><div class="text-white font-display font-bold text-sm">Innovation</div><div class="text-orange-100 font-display font-bold text-base">Continue</div></div></div>
+        </div>
+        <div class="floating-panel animate-float-right3" style="top: 78%; right: 3%; max-width: 185px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both, floatVerticalRight3 6s ease-in-out 1.2s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">✅</span><div><div class="text-orange-400 font-display font-bold text-sm">Certifié</div><div class="text-white font-display font-bold text-base">ISO 27001</div></div></div>
+        </div>
+        <div class="floating-panel floating-panel-orange animate-float-right4" style="bottom: 4%; right: 7%; max-width: 185px; animation: popInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both, floatVerticalRight4 9s ease-in-out 1.3s infinite;">
+            <div class="flex items-center gap-3"><span class="text-2xl">⭐</span><div><div class="text-white font-display font-bold text-sm">Excellence</div><div class="text-orange-100 font-display font-bold text-base">Opérationnelle</div></div></div>
         </div>
     </div>
+
+    <div class="relative z-20 w-full max-w-7xl mx-auto p-4 lg:p-8 min-h-screen flex items-center">
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-16 w-full" id="mainLayout">
+            
+            <div id="postersSection" class="flex-1 w-full py-8">
+                
+                <!-- ✅ BOUTON SE CONNECTER EN HAUT À DROITE -->
+                <div class="flex justify-end mb-6 animate-slide-down">
+                    <button onclick="showLoginForm()" 
+                            class="btn-connect-main text-white font-bold py-3 px-8 rounded-2xl text-sm inline-flex items-center gap-2 shadow-2xl shadow-orange-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+                        </svg>
+                        Se connecter
+                    </button>
+                </div>
+                
+                <!-- Logo -->
+                <div class="flex justify-center lg:justify-start mb-6 animate-slide-down">
+                    <div class="relative inline-block logo-container">
+                        <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse-glow"></div>
+                        <img src="{{ url_for('static', filename='logo.png') }}" 
+                             alt="Outsourcia" 
+                             class="relative z-10"
+                             style="height: 80px; width: auto;"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display: none; height: 80px; align-items: center; justify-content: center; position: relative; z-index: 10;">
+                            <span style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; color: #f97316;">OUTSOURCIA</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-center lg:text-left text-orange-400 text-sm lg:text-base font-semibold tracking-widest uppercase mb-4 animate-slide-down stagger-1">
+                    Excellence Relation Client
+                </p>
+
+                <h1 class="text-center lg:text-left text-white font-display font-bold text-4xl lg:text-5xl xl:text-6xl leading-tight mb-4 animate-slide-up stagger-1">
+                    L'Obsession<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Client</span>
+                </h1>
+                
+                <p class="text-center lg:text-left text-gray-300 text-base lg:text-lg max-w-xl mb-6 animate-slide-up stagger-2">
+                    Un accompagnement priorisant et valorisant vos clients tout au long de leur expérience reposant sur 3 axes customer-centric.
+                </p>
+
+                <!-- Bandeaux -->
+                <div class="mb-6 animate-fade-in stagger-3">
+                    <div class="marquee-wrapper bg-gradient-to-r from-darkBlue/80 to-darkerBlue/80 rounded-2xl py-4 border border-white/10 mb-3">
+                        <div class="marquee-content">
+                            <div class="flex items-center gap-8 px-8">
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">4</span><span class="text-white/80 text-sm uppercase tracking-wider">Pays</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">12</span><span class="text-white/80 text-sm uppercase tracking-wider">Sites</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">10</span><span class="text-white/80 text-sm uppercase tracking-wider">Langues</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">4 300</span><span class="text-white/80 text-sm uppercase tracking-wider">Collaborateurs</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">4</span><span class="text-white/80 text-sm uppercase tracking-wider">Pays</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">12</span><span class="text-white/80 text-sm uppercase tracking-wider">Sites</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">10</span><span class="text-white/80 text-sm uppercase tracking-wider">Langues</span></div>
+                                <div class="w-px h-8 bg-white/10"></div>
+                                <div class="flex items-center gap-3"><span class="text-3xl text-orange-400" style="font-family:'Syne',sans-serif;font-weight:800;">4 300</span><span class="text-white/80 text-sm uppercase tracking-wider">Collaborateurs</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="marquee-wrapper bg-gradient-to-r from-darkerBlue/80 to-darkBlue/80 rounded-2xl py-3 border border-white/10">
+                        <div class="marquee-content-reverse">
+                            <div class="flex items-center gap-6 px-6">
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🌍 Présence Onshore & Offshore</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🎯 Customer Obsession</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">💡 Innovation Continue</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🤝 Partenaire de Confiance</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🌍 Présence Onshore & Offshore</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🎯 Customer Obsession</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">💡 Innovation Continue</span><span class="text-orange-400">•</span>
+                                <span class="text-white/70 text-xs uppercase tracking-widest">🤝 Partenaire de Confiance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Affiches -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 animate-slide-up stagger-4">
+                    <div class="poster-card bg-gradient-to-br from-darkBlue to-blue-800 rounded-2xl p-5 lg:p-6 border border-white/10">
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            </div>
+                            <div><h3 class="text-white font-display font-bold text-lg">Notre ADN</h3><p class="text-orange-400 text-sm font-semibold">L'Obsession Client</p></div>
+                        </div>
+                        <p class="text-gray-400 text-sm">Chez Outsourcia, l'humain se situe au cœur de tous les enjeux, la passion nous unit vers un seul objectif.</p>
+                    </div>
+                    <div class="poster-card bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl p-5 lg:p-6 border border-white/10">
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                            </div>
+                            <div><h3 class="text-white font-display font-bold text-lg">Customer Obsession</h3><p class="text-orange-100 text-sm font-semibold">3 axes customer-centric</p></div>
+                        </div>
+                        <p class="text-orange-100 text-sm">Écouter, comprendre, analyser vos besoins pour structurer votre parcours client idéal et unique.</p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- SECTION DROITE : LOGIN -->
+            <div id="loginSection" class="w-full max-w-md lg:max-w-sm xl:max-w-md hidden" style="opacity: 0; transform: scale(0.9); transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 25;">
+                <div class="login-card rounded-3xl overflow-hidden">
+                    <div class="px-8 pt-8 pb-4 text-center">
+                        <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-500/25">
+                            <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                        </div>
+                        <h2 class="text-white font-display font-bold text-xl">Connexion</h2>
+                        <p class="text-gray-400 text-sm mt-1">Accédez à votre espace sécurisé</p>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="px-8 pb-2 space-y-2">
+                                {% for category, message in messages %}
+                                    <div class="flex items-start gap-2 p-3 rounded-xl text-sm border {% if category == 'success' %}bg-emerald-500/10 border-emerald-500/30 text-emerald-300{% elif category == 'error' %}bg-red-500/10 border-red-500/30 text-red-300{% else %}bg-amber-500/10 border-amber-500/30 text-amber-300{% endif %}">
+                                        <span class="flex-shrink-0">{{ message }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="px-8 pb-8">
+                        <form method="POST" class="space-y-4">
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-300 mb-1.5">Email professionnel</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                                    </div>
+                                    <input type="email" name="email" id="email" required class="input-premium block w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="prenom.nom@outsourcia.com">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-300 mb-1.5">Mot de passe</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                                    </div>
+                                    <input type="password" name="password" id="password" required class="input-premium block w-full rounded-xl pl-11 pr-12 py-3 text-sm" placeholder="••••••••">
+                                    <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-500 hover:text-orange-400 transition-colors">
+                                        <svg id="eye-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-2">
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" name="remember" class="w-4 h-4 rounded border-gray-600 bg-transparent text-orange-500 focus:ring-orange-500 focus:ring-offset-0">
+                                    <span class="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Se souvenir</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="btn-connect-main w-full text-white font-semibold py-3.5 px-4 rounded-xl text-sm">
+                                <span class="relative z-10 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                                    Se connecter
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="px-8 pb-6 text-center border-t border-white/5 pt-5">
+                        <button onclick="hideLoginForm()" class="text-gray-500 hover:text-orange-400 transition-colors text-sm flex items-center gap-2 mx-auto">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+                            Retour
+                        </button>
+                    </div>
+                </div>
+                <p class="text-center text-gray-600 text-xs mt-6">&copy; 2025 Outsourcia Group. Tous droits réservés.</p>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>`;
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>`;
+            }
+        }
+        
+        function showLoginForm() {
+            document.getElementById('floatingPanelsContainer').classList.add('active');
+            const posters = document.getElementById('postersSection');
+            const login = document.getElementById('loginSection');
+            posters.style.opacity = '0';
+            posters.style.transform = 'translateX(-40px)';
+            posters.style.pointerEvents = 'none';
+            posters.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            setTimeout(() => {
+                posters.style.display = 'none';
+                login.style.display = 'block';
+                setTimeout(() => {
+                    login.style.opacity = '1';
+                    login.style.transform = 'scale(1)';
+                    login.style.pointerEvents = 'auto';
+                }, 50);
+            }, 500);
+        }
+        
+        function hideLoginForm() {
+            document.getElementById('floatingPanelsContainer').classList.remove('active');
+            const posters = document.getElementById('postersSection');
+            const login = document.getElementById('loginSection');
+            login.style.opacity = '0';
+            login.style.transform = 'scale(0.9)';
+            login.style.pointerEvents = 'none';
+            setTimeout(() => {
+                login.style.display = 'none';
+                posters.style.display = 'block';
+                setTimeout(() => {
+                    posters.style.opacity = '1';
+                    posters.style.transform = 'translateX(0)';
+                    posters.style.pointerEvents = 'auto';
+                }, 50);
+            }, 500);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('postersSection').style.display = 'block';
+            document.getElementById('postersSection').style.opacity = '1';
+            document.getElementById('postersSection').style.transform = 'translateX(0)';
+            document.getElementById('postersSection').style.pointerEvents = 'auto';
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('floatingPanelsContainer').classList.remove('active');
+        });
+    </script>
 </body>
 </html>
